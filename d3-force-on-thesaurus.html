@@ -1,0 +1,109 @@
+<!-- Code from d3-graph-gallery.com -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script>
+
+  // set the dimensions and margins of the graph
+  var margin = { top: 10, right: 30, bottom: 30, left: 40 },
+    width = 6000 - margin.left - margin.right,
+    height = 6000 - margin.top - margin.bottom;
+
+  // append the svg object to the body of the page
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+      "translate(" + margin.left + "," + margin.top + ")");
+
+  d3.json("data/th13.json", function (data) {
+    // Renaming some keys for compatibility with D3
+    data.relationships.forEach(element => {
+      element.source = element.start
+      delete element.start
+      element.target = element.end
+      delete element.end
+    });
+
+    // Initialize the links
+    var link = svg
+      .selectAll("line")
+      .data(data.relationships)
+      .enter()
+      .append("line")
+      .style("stroke", "#aaa")
+
+    // Initialize the nodes
+    var node = svg
+      .selectAll("circle")
+      .data(data.nodes)
+      .enter()
+      .append("circle")
+      .attr("r", 5)
+      .style("fill", "#000000")
+
+    // Let's list the force we wanna apply on the network
+    var simulation = d3.forceSimulation(data.nodes)                 // Force algorithm is applied to data.nodes
+      //.force("link", d3.forceLink()                               // This force provides links between nodes
+      //.id(function(d) { return d.id; })                     // This provide  the id of a node
+      //.links(data.links)                                    // and this the list of links
+      //.distance(50)
+      //)    
+      .force("charge", d3.forceManyBody().strength(10))         // This adds repulsion between nodes. Play with the -400 for the repulsion strength
+      // {'skos__ConceptScheme', 'skos__Concept', 'Resource', 'skos__Collection'}
+      .force("x", d3.forceX().x(function (d) {
+        if (d.labels.includes("skos__ConceptScheme")) {
+          return 1000
+        } else if (d.labels.includes("skos__Concept")) {
+          return 2500
+        } else if (d.labels.includes("skos__Collection")) {
+          return 3500
+        } else { // Its purely a resource
+          return 4000
+        }
+      }))
+      .force("y", d3.forceY().y(function (d) {
+        return height / 2
+      }))
+      .force("Collision", d3.forceCollide().radius(function (d) {
+        return 20
+      }))
+      .on("tick", ticked);
+
+    // This function is run at each iteration of the force algorithm, updating the nodes position.
+    function ticked() {
+      node
+        .attr("cx", function (d) { return d.x + 6; })
+        .attr("cy", function (d) { return d.y - 6; });
+      link
+        .attr("x1", function (d) { return data.nodes.find((element) => element.id == d.source).x; })
+        .attr("y1", function (d) { return data.nodes.find((element) => element.id == d.source).y; })
+        .attr("x2", function (d) {
+          try {
+            return data.nodes.find((element) => element.id == d.target).x;
+          } catch (error) {
+            //console.error(error);
+            return 0;
+          }
+        })
+        .attr("y2", function (d) {
+          try {
+            return data.nodes.find((element) => element.id == d.target).y;
+          } catch (error) {
+            //console.error(error);
+            return 0;
+          }
+        }); 
+    }
+
+  });
+
+</script> 
