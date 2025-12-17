@@ -69,21 +69,28 @@ for i in range(len(thesoList)):
     nodes.truncate()
     edges.truncate()
 
-    """ for node in thesoList[i]['nodes']:
-        node["_id"] = curr_thesoconfig['name'] + '/' + node["id"]
-        del node["id"] """ 
+    print("Processing nodes...")
 
-    print(nodes.insert_many(thesoList[i]['nodes']))
+    new_nodes = nodes.insert_many(thesoList[i]['nodes'], return_new=True)
 
-    print("Processing edges")
+    print("Processing edges...")
 
-    # FIXME : Apply correct vertexKeys
     for edge in thesoList[i]['relationships']:
-        edge["_from"] = curr_thesoconfig['name'] + '/' + edge["start"]
-        del edge["start"]
-        edge["_to"] = curr_thesoconfig['name'] + '/' + edge["end"]
-        del edge["end"]
+        start = next((item for item in new_nodes if item['new']['id'] == edge["start"]), False) # Searching for node wich original id was the edge start
+        to = next((item for item in new_nodes if item['new']['id'] == edge["end"]), False)
 
-    print(thesoList[i]['relationships'])
+        if start and to:
+            edge["_from"] = start['_id']
+            del edge["start"]
+            
+            edge["_to"] = to['_id']
+            del edge["end"]
+        else:
+            print(f"could not find starting or ending node for edge : {edge}")
+            print("Ignoring edge and continuing")
+            del edge
 
-    print(edges.insert_many(thesoList[i]['relationships']))
+    result = edges.insert_many(thesoList[i]['relationships'], silent=True, raise_on_document_error=True)
+
+    if result:
+        print(f"Succesfully imported thesaurus {curr_thesoconfig['name']}")
