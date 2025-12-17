@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "Configuration of the openTheso to arangoDB Python tool",
+    "type": "object",
+    "properties": {
+        "credentials": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "username": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "required": [
+                "host",
+                "username",
+                "password"
+            ]
+        },
+        "thesauri": {
+            "type": "array",
+            "description": "List of thesaurus specific config",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "database",
+                    "source"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the collection in wich to put the thesaurus (The edges collection will just have '_EDGES' appended to this string)"
+                    },
+                    "database": {
+                        "type": "string",
+                        "description": "The database in wich to import the openTheso graph"
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "The API link to the thesaurus"
+                    },
+                    "types": {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                "nodes",
+                                "edges"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 2
+                    },
+                    "nodeListName": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "edgeListName": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                }
+            }
+        }
+    },
+    "required": [
+        "credentials",
+        "thesauri"
+    ]
+}

@@ -1,0 +1,21 @@
+{
+    "credentials": {
+        "host" : "http://localhost:8529",
+        "username" : "root",
+        "password" : "test"
+    },
+    "thesauri" : [
+        {
+            "name" : "ndp data thesaurus",
+            "database" : "test",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/graph/getData?lang=fr&idThesoConcept=th13:60886",
+            "types" : [
+                "nodes",
+                "edges"
+            ],
+            "nodeListName" : "nodes",
+            "edgeListName" : "relationships"
+        }
+    ]
+}
+
