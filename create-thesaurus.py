@@ -75,6 +75,9 @@ for i in range(len(thesoList)):
 
     print("Processing edges...")
 
+    success = 0
+    skip = 0
+
     for edge in thesoList[i]['relationships']:
         start = next((item for item in new_nodes if item['new']['id'] == edge["start"]), False) # Searching for node wich original id was the edge start
         to = next((item for item in new_nodes if item['new']['id'] == edge["end"]), False)
@@ -85,10 +88,13 @@ for i in range(len(thesoList)):
             
             edge["_to"] = to['_id']
             del edge["end"]
+
+            success += 0
         else:
-            print(f"could not find starting or ending node for edge : {edge}")
-            print("Ignoring edge and continuing")
+            skip += 1
             del edge
+
+    print(f"Skipped {skip} edges out of {success}")
 
     result = edges.insert_many(thesoList[i]['relationships'], silent=True, raise_on_document_error=True)
 
