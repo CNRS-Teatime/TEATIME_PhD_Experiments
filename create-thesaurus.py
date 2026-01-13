@@ -43,6 +43,8 @@ config = getConfig("config.json")
 credentials = config['credentials']
 thesoList = fetchThesaurus(config["thesauri"])
 client = ArangoClient(hosts=credentials['host'])
+interThesaurusEdges = []
+all_nodes = []
 
 for i in range(len(thesoList)):
     curr_thesoconfig = config["thesauri"][i]
@@ -73,9 +75,10 @@ for i in range(len(thesoList)):
 
     new_nodes = nodes.insert_many(thesoList[i]['nodes'], return_new=True)
 
+    all_nodes += new_nodes
+
     print("Processing edges...")
 
-    success = 0
     skip = 0
 
     for edge in thesoList[i]['relationships']:
@@ -89,14 +92,33 @@ for i in range(len(thesoList)):
             edge["_to"] = to['_id']
             del edge["end"]
 
-            success += 0
         else:
             skip += 1
+            interThesaurusEdges.append(edge)
             del edge
 
-    print(f"Skipped {skip} edges out of {success}")
+    print(f"Skipped {skip} edges out of {len(thesoList[i]['relationships'])}")
 
     result = edges.insert_many(thesoList[i]['relationships'], silent=True, raise_on_document_error=True)
 
     if result:
         print(f"Succesfully imported thesaurus {curr_thesoconfig['name']}")
+
+# Here we take into account the inter-thesauri edges, the objective is to be able to create a "master" graph that links all thesaurus graphs
+# increasing exhaustivity and interconnection
+for edge in interThesaurusEdges :
+    start = next((item for item in all_nodes if item['new']['id'] == edge["start"]), False) # Searching for node wich original id was the edge start
+    to = next((item for item in all_nodes if item['new']['id'] == edge["end"]), False)
+
+    if start and to:
+        edge["_from"] = start['_id']
+        del edge["start"]
+        
+        edge["_to"] = to['_id']
+        del edge["end"]
+
+    else:
+        del edge
+
+edges = curr_db.create_collection("Shared_EDGES", edge=True)
+edges.insert_many(interThesaurusEdges, silent=True, raise_on_document_error=True)
