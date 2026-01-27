@@ -22,7 +22,8 @@
             "required": [
                 "host",
                 "username",
-                "password"
+                "password",
+                "database"
             ]
         },
         "thesauri": {
@@ -34,7 +35,6 @@
                 "type": "object",
                 "required": [
                     "name",
-                    "database",
                     "source"
                 ],
                 "properties": {

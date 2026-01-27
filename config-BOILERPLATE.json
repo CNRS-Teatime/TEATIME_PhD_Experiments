@@ -2,12 +2,12 @@
     "credentials": {
         "host" : "http://localhost:8529", 
         "username" : "user",
-        "password" : "password"
+        "password" : "password",
+        "database" : "DATABASENAME"
     },
     "thesauri" : [
         {
             "name" : "PREFERED NAME 1",
-            "database" : "DATABASENAME",
             "source" : "https://your.web.link/openapi/v1/graph/getData?dThesoConcept=ID",
             "types" : [
                 "nodes",
@@ -18,7 +18,6 @@
         },
         {
             "name" : "PREFERED NAME 2",
-            "database" : "DATABASENAME",
             "source" : "https://your.web.link/openapi/v1/graph/getData?dThesoConcept=ID",
             "types" : [
                 "nodes",
