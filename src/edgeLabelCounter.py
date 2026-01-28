@@ -10,7 +10,7 @@ def get_all_edge_col_names(db: database.StandardDatabase) -> list:
         "FOR c IN COLLECTIONS() \
             FILTER LIKE(c.name, '%_EDGES') \
             RETURN c.name")
-    return [name for name in cursor]
+    return [name for _ in cursor]
 
 
 def count_labels(db: database.StandardDatabase, col : str) -> dict:
@@ -22,26 +22,24 @@ def count_labels(db: database.StandardDatabase, col : str) -> dict:
         "FOR doc IN @@name\
          RETURN doc.`label`",
          bind_vars={'@name': col})
-    coutingDictionary : dict = {}
+    counting_dictionary : dict = {}
     for label in cursor:
-        if label in coutingDictionary:
-            coutingDictionary[label] += 1
+        if label in counting_dictionary:
+            counting_dictionary[label] += 1
         else:
-            coutingDictionary[label] = 1
-    return coutingDictionary
+            counting_dictionary[label] = 1
+    return counting_dictionary
 
 if __name__ == "__main__":
     client : ArangoClient = ArangoClient("http://localhost:8529")
 
-    db : database.StandardDatabase = client.db("TEATIME", "Marwan", password="Dragon74")
-    colnames : list = get_all_edge_col_names(db)
+    currentdb : database.StandardDatabase = client.db("TEATIME", "Marwan", password="Dragon74")
+    colnames : list = get_all_edge_col_names(currentdb)
     
     results : dict = {}
     for name in colnames :
-        countedLabels : dict = count_labels(db, name)
+        countedLabels : dict = count_labels(currentdb, name)
         results[name] = countedLabels
-    
-    print(results)
 
     with open("results.csv", 'w') as f:
         for name in results:
