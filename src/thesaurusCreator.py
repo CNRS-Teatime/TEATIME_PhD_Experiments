@@ -7,18 +7,25 @@ from arango import ArangoClient, database
 from jsonschema import validate, ValidationError
 
 
-def get_config(config_path: str) -> dict:
+def get_config(config_path: str, schema_path: str = None) -> dict:
     """
     Parse the configuration file and validate it against the JSON schema.
 
-    :param config_path: A path to the configuration file
+    :param config_path: A path to the JSON configuration file
     :type config_path: str
+
+    :param schema_path: A path to the JSON schema (optional)
+    :type schema_path: str
 
     :return: A dictionary containing the validated configuration JSON
     """
     with open(config_path) as file:
         config_list = json.load(file)
-        with open("theso-config-schema.json") as schemafile:
+
+        if schema_path is None:
+            return config_list
+        # If we've got a schema we validate against it
+        with open(schema_path) as schemafile:
             schema = json.load(schemafile)
             try :
                 validate(config_list, schema)
@@ -157,7 +164,7 @@ if __name__ == '__main__':
         print("Please provide config file path as first argument")
         sys.exit()
 
-    config = get_config(sys.argv[1])
+    config = get_config(sys.argv[1], "config/theso-config-schema.json")
     credentials = config['credentials']
     thesoList = fetch_thesaurus(config["thesauri"])
     client = ArangoClient(hosts=credentials['host'])
