@@ -1,0 +1,42 @@
+{
+    "credentials": {
+        "host" : "http://localhost:8529",
+        "username" : "user",
+        "password" : "password",
+        "database" : "DATABASENAME"
+    },
+    "graphs" : [
+        {
+            "name" : "PREFERED NAME 1",
+            "relations" : [
+                {
+                    "edge_collection" : "EDGE COLLECTION NAME",
+                    "from_vertex_collections" : [
+                        "COLLECTION 1",
+                        "COLLECTION 2"
+                    ],
+                    "to_vertex_collections" : [
+                        "COLLECTION 3",
+                        "COLLECTION 4"
+                    ]
+                }
+            ]
+        },
+        {
+            "name" : "PREFERED NAME 2",
+            "relations" : [
+                {
+                    "edge_collection" : "EDGE COLLECTION NAME",
+                    "from_vertex_collections" : [
+                        "COLLECTION 1",
+                        "COLLECTION 2"
+                    ],
+                    "to_vertex_collections" : [
+                        "COLLECTION 3",
+                        "COLLECTION 4"
+                    ]
+                }
+            ]
+        }
+    ]
+}
