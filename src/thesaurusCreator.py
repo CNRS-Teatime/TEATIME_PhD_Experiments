@@ -50,14 +50,13 @@ def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, th
     """ 
     skipped_edges = []
 
-    # Chekc if collection already exists
-    # Otherwise we create it
+    # Chekc if collection already exists we delete it
     if db.has_collection(thesaurus_config['name']):
-        nodes = db.collection(thesaurus_config['name'])
-        edges = db.collection(thesaurus_config['name'] + "_EDGES")
-    else:
-        nodes = db.create_collection(thesaurus_config['name'])
-        edges = db.create_collection(thesaurus_config['name'] + "_EDGES", edge=True)
+        db.delete_collection(thesaurus_config['name'])
+        db.delete_collection(thesaurus_config['name'] + "_EDGES")
+
+    nodes = db.create_collection(thesaurus_config['name'])
+    edges = db.create_collection(thesaurus_config['name'] + "_EDGES", edge=True)
 
     nodes.truncate()
     edges.truncate()
@@ -98,15 +97,15 @@ def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, th
     return [], [] #Import was unsuccessful so we return nothing
 
 
-def fetch_thesaurus(thesori_config_list: dict):
+def fetch_thesaurus(thesori_config_list: dict) -> list:
     """  
     Goes throught the list of thesaurus configuration and fetches each one individually via a REST GET request
     """
-    theso_list = []
+    theso_list : list = []
     for thesaurus in thesori_config_list:
-        api_url = thesaurus["source"]
+        api_url : str = thesaurus["source"]
         print(f"Requesting thesaurus {api_url} ...")
-        response = requests.get(api_url)
+        response : requests.models.Response  = requests.get(api_url)
         if response.status_code == 200:
             theso_list.append(response.json())
             print(f"Thesaurus {thesaurus['source']} succesfully fetched from remote")
@@ -115,7 +114,7 @@ def fetch_thesaurus(thesori_config_list: dict):
     return theso_list
 
 
-def generate_inter_thesauri_edges(db : database.StandardDatabase, all_nodes : list, edges : list):
+def generate_inter_thesauri_edges(db : database.StandardDatabase, all_nodes : list, edges : list) -> list:
     """
     Here we take into account the inter-thesauri edges, the objective is to be able to create a "master" graph that links all thesaurus graphs
     increasing exhaustivity and interconnection. The edges are put in their own separate Shared_EDGES collection. This is the only edges collection
@@ -128,31 +127,152 @@ def generate_inter_thesauri_edges(db : database.StandardDatabase, all_nodes : li
     :param edges: A list of all the edges we need to create
     :type edges: list
     """
-    for edge in edges :
-        if not edge:
+    i = 0
+    length = len(edges)
+    while i < length:
+        if not edges[i]:
+            del edges[i]
             break
 
-        start = next((item for item in all_nodes if item['new']['id'] == edge["start"]), False) # Searching for node wich original id was the edge start
-        to = next((item for item in all_nodes if item['new']['id'] == edge["end"]), False)
+        start : dict = {}
+        to : dict = {}
+        for item in all_nodes:
+            if item['new']['id'] == edges[i]['start']:
+                start = item
+            if item['new']['id'] == edges[i]['end']:
+                to = item
 
-        if start and to:
-            edge["_from"] = start['_id']
-            del edge["start"]
+        if start != {} and to != {}:
+            edges[i]["_from"] = start['_id']
+            del edges[i]["start"]
             
-            edge["_to"] = to['_id']
-            del edge["end"]
-
+            edges[i]["_to"] = to['_id']
+            del edges[i]["end"]
         else:
-            del edge
+            del edges[i]
+            length -= 1
+            i -= 1
+
+        i += 1
 
     # Check if collection already exists
     # Otherwise we create it
     if db.has_collection("Shared_EDGES"):
-        edges = db.collection("Shared_EDGES")
-    else:
-        edges = db.create_collection("Shared_EDGES", edge=True)
+        db.delete_collection("Shared_EDGES")
 
-    edges.insert_many(edges, silent=True, raise_on_document_error=True)
+    edges_collection : database.StandardCollection = db.create_collection("Shared_EDGES", edge=True)
+
+    print("Inserted Shared_EDGES")
+    return edges_collection.insert_many(edges, return_new=True)
+
+# These two functions work on a different kind of import, which is much more detailed
+
+def create_thesaurus_dict(parsed_thesaurus : dict) -> list:
+
+    thesaurus : list = []
+
+    for entry in parsed_thesaurus:
+        # Here we prepare the schema for each annotation
+        # Comments next to key value pairs are the URI's associated with them in the original data
+        annotation: dict = {
+            "_key": entry.split("/")[-1],  # The id is the last element of the URI separated by /
+            "labels": [],  # http://www.w3.org/2004/02/skos/core#prefLabel Remove the type from this one
+            "type": None,  # http://www.w3.org/1999/02/22-rdf-syntax-ns#type
+            "created": None,  # http://purl.org/dc/terms/created
+            "modified": None,  # http://purl.org/dc/terms/modified
+            "description": None,  # http://purl.org/dc/terms/description Remove the type
+            "ark": entry,  # The key value of the entry
+            "name": None,  # The first label value
+            "note": None,  # "http://www.w3.org/2004/02/skos/core#scopeNote"
+            "definition": None,  # http://www.w3.org/2004/02/skos/core#definition
+        }
+
+        # The data being semi-structured we have to check if the key exists before doing anything with it
+
+        if "http://www.w3.org/2004/02/skos/core#prefLabel" in parsed_thesaurus[entry]:
+            annotation["labels"] = parsed_thesaurus[entry]["http://www.w3.org/2004/02/skos/core#prefLabel"]
+        for label in annotation["labels"]:
+            del label["type"]
+
+            # We do not have a name without a label so we define it here
+            annotation["name"] = annotation["labels"][0]["value"]
+
+        if "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" in parsed_thesaurus[entry]:
+            try:  # We only want the skos types
+                annotation["type"] = parsed_thesaurus[entry]["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"][0]["value"].split("#")[1]
+                pass
+            except IndexError:  # Otherwise we skip the entry
+                print(parsed_thesaurus[entry]["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"][0]["value"])
+                continue
+
+        if annotation["type"] != "Concept":  # We only want to get concepts
+            continue
+
+        if "http://purl.org/dc/terms/created" in parsed_thesaurus[entry]:
+            annotation["created"] = parsed_thesaurus[entry]["http://purl.org/dc/terms/created"][0]["value"]
+
+        if "http://purl.org/dc/terms/modified" in parsed_thesaurus[entry]:
+            annotation["modified"] = parsed_thesaurus[entry]["http://purl.org/dc/terms/modified"][0]["value"]
+
+        if "http://purl.org/dc/terms/description" in parsed_thesaurus[entry]:
+            annotation["description"] = parsed_thesaurus[entry]["http://purl.org/dc/terms/description"][0]
+            del annotation["description"]["type"]
+
+        if "http://www.w3.org/2004/02/skos/core#scopeNote" in parsed_thesaurus[entry]:
+            annotation["note"] = parsed_thesaurus[entry]["http://www.w3.org/2004/02/skos/core#scopeNote"][0]["value"]
+
+        if "http://www.w3.org/2004/02/skos/core#definition" in parsed_thesaurus[entry]:
+            annotation["definition"] = parsed_thesaurus[entry]["http://www.w3.org/2004/02/skos/core#definition"][0]["value"]
+
+        thesaurus.append(annotation)
+    return thesaurus
+
+def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str) -> list:
+    # I could have done it all inside of a single function, but I'm splitting for readability (in spite of performance) since
+    # we won't do this often, and it is bottlenecked by the internet connexion anyway
+    relations_list : list = []
+
+    for entry in parsed_thesaurus:
+        to_key : str = thesaurus_name + '/' +  entry.split("/")[-1] # Each entry defines the incoming relations, so we have the same _from key
+
+        # We will create a relation for each entry in the broader, narrower, related, closematch and exactmatch list
+        # TODO : demander a violette pour les relations specifiques du TH56
+
+        broader : str = "http://www.w3.org/2004/02/skos/core#broader"
+        narrower : str = "http://www.w3.org/2004/02/skos/core#narrower"
+        related : str = "http://www.w3.org/2004/02/skos/core#related"
+        close_match : str = "http://www.w3.org/2004/02/skos/core#closeMatch"
+        exact_match : str = "http://www.w3.org/2004/02/skos/core#exactMatch"
+
+
+        # The data being semi-structured we have to check if the key exists before doing anything with it
+
+        if broader in parsed_thesaurus[entry]:
+            for relation in parsed_thesaurus[entry][broader]:
+                relations_list.append({
+                    "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
+                    "_to" : to_key,
+                    "type" : "broader"
+                })
+
+        if narrower in parsed_thesaurus[entry]:
+            for relation in parsed_thesaurus[entry][narrower]:
+                relations_list.append({
+                    "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
+                    "_to" : to_key,
+                    "type" : "narrower"
+                })
+
+        if related in parsed_thesaurus[entry]:
+            for relation in parsed_thesaurus[entry][related]:
+                relations_list.append({
+                    "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
+                    "_to" : to_key,
+                    "type" : "related"
+                })
+
+    return relations_list
+
 
 
 
@@ -188,4 +308,4 @@ if __name__ == '__main__':
         all_new_nodes += added
 
     if interThesaurusEdges != [[]] and all_new_nodes != []:
-        generate_inter_thesauri_edges(database, all_new_nodes, interThesaurusEdges)
+        print(generate_inter_thesauri_edges(database, all_new_nodes, interThesaurusEdges))
