@@ -13,12 +13,12 @@ def create_graph(db : database.StandardDatabase, graph_list : list) -> None:
 
         #Creating the edge definitions
         for definition in g["relations"]:
-            print(definition)
             curr_graph.create_edge_definition(
                 edge_collection = definition["edge_collection"],
                 from_vertex_collections = definition["from_vertex_collections"],
                 to_vertex_collections = definition["to_vertex_collections"]
             )
+        print(f"Created graph {g["name"]}")
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
@@ -31,7 +31,5 @@ if __name__ == '__main__':
 
     client : ArangoClient = ArangoClient(hosts=credentials['host'])
     curr_db : database.StandardDatabase = client.db(credentials['database'], username=credentials['username'], password=credentials['password'])
-
-    print(graphs)
 
     create_graph(curr_db, graphs)
