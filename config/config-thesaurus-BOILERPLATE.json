@@ -9,22 +9,12 @@
         {
             "name" : "PREFERED NAME 1",
             "source" : "https://your.web.link/openapi/v1/graph/getData?dThesoConcept=ID",
-            "types" : [
-                "nodes",
-                "edges"
-            ],
-            "nodeListName" : "nodes",
-            "edgeListName" : "relationships"
+            "type" : "graph"
         },
         {
-            "name" : "PREFERED NAME 2",
-            "source" : "https://your.web.link/openapi/v1/graph/getData?dThesoConcept=ID",
-            "types" : [
-                "nodes",
-                "edges"
-            ],
-            "nodeListName" : "nodes",
-            "edgeListName" : "relationships"
+            "name": "PREFERED NAME 2",
+            "source": "https://your.web.link/openapi/v1/thesaurus/ID",
+            "type": "raw"
         }
     ]
 }

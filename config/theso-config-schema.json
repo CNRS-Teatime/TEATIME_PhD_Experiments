@@ -35,39 +35,20 @@
                 "type": "object",
                 "required": [
                     "name",
-                    "source"
+                    "source",
+                    "type"
                 ],
                 "properties": {
                     "name": {
                         "type": "string",
                         "description": "The name of the collection in wich to put the thesaurus (The edges collection will just have '_EDGES' appended to this string)"
                     },
-                    "database": {
-                        "type": "string",
-                        "description": "The database in wich to import the openTheso graph"
-                    },
                     "source": {
                         "type": "string",
                         "description": "The API link to the thesaurus"
                     },
-                    "types": {
-                        "type": "array",
-                        "items": {
-                            "enum": [
-                                "nodes",
-                                "edges"
-                            ]
-                        },
-                        "minItems": 1,
-                        "maxItems": 2
-                    },
-                    "nodeListName": {
-                        "type": "string",
-                        "minLength": 1
-                    },
-                    "edgeListName": {
-                        "type": "string",
-                        "minLength": 1
+                    "type": {
+                        "enum": ["raw", "graph"]
                     }
                 }
             }

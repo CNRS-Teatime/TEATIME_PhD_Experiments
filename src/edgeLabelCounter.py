@@ -7,7 +7,7 @@ from arango import ArangoClient, database
 # AQL does not let us dynamicaly iterate over collections when querying so we need to get the collections name and iterate on the client
 def get_all_edge_col_names(db: database.StandardDatabase) -> list:
     """
-    Queries for all the collection name ending in _EDGES in the specified database. This is done to only get
+    Queries for all the collection name ending in _relations in the specified database. This is done to only get
     edge collections of thesauri we inserted with the thesaurusCreator tool.
     :param db: The arango API wrapper for the desired database
     :type db: Arango.database.StandardDatabase:
@@ -15,23 +15,23 @@ def get_all_edge_col_names(db: database.StandardDatabase) -> list:
     """
     cursor = db.aql.execute(
         "FOR c IN COLLECTIONS() \
-            FILTER LIKE(c.name, '%_EDGES') \
+            FILTER LIKE(c.name, 'th%_relations') \
             RETURN c.name")
     return [_ for _ in cursor]
 
 
 def count_labels(db: database.StandardDatabase, col : str) -> dict:
     """
-    Count the occurences of each label name in a given edge collections
+    Count the occurences of each types in a given edge collections
     :param db: The arango API wrapper for the desired database
     :type db: Arango.database.StandardDatabase
-    :param col: The name of the collection for wich we want to count labels
+    :param col: The name of the collection for wich we want to count types
     :type col: str
-    :returns: A dictionary, with label names as keys and number of occurences as values
+    :returns: A dictionary, with type names as keys and number of occurences as values
     """
     cursor = db.aql.execute(
         "FOR doc IN @@name\
-         RETURN doc.`label`",
+         RETURN doc.`type`",
          bind_vars={'@name': col})
     counting_dictionary : dict = {}
     for label in cursor:
@@ -44,7 +44,7 @@ def count_labels(db: database.StandardDatabase, col : str) -> dict:
 if __name__ == "__main__":
     client : ArangoClient = ArangoClient("http://localhost:8529")
 
-    currentdb : database.StandardDatabase = client.db("TEATIME", "Marwan", password="Dragon74")
+    currentdb : database.StandardDatabase = client.db("TEATIME", "root", password="test")
     colnames : list = get_all_edge_col_names(currentdb)
     
     results : dict = {}

@@ -34,11 +34,25 @@ def get_config(config_path: str, schema_path: str = None) -> dict:
                 raise 
             return config_list
 
+def get_collections(db : database.StandardDatabase, name: str) -> tuple[database.StandardCollection, database.StandardCollection] :
+    if db.has_collection(name):
+        nodes_collection : database.StandardCollection = db.collection(name)
+        nodes_collection.truncate()
+    else:
+        nodes_collection : database.StandardCollection = db.create_collection(name)
+
+    if db.has_collection(name + "_relations"):
+        edges_collection : database.StandardCollection = db.collection(name + "_relations")
+        edges_collection.truncate()
+    else:
+        edges_collection : database.StandardCollection = db.create_collection(name + "_relations", edge=True)
+
+    return nodes_collection, edges_collection
 
 def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, thesaurus : dict):
     """
     Insert a thesaurus into a designated Arango Database using its configuration and JSON. If the insertion is unsuccesful, the tuple will contain two empty lists.
-    
+
     :param db: The arango database API wrapper
     :type db: arango.database.StandardDatabase
     :param thesaurus_config: (part of) the JSON config for the desired thesaurus, containing its name and source
@@ -47,23 +61,18 @@ def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, th
     :type thesaurus: dict
 
     :return: The list of skipped edges, and the list of added edges, in this order.
-    """ 
+    """
     skipped_edges = []
 
     # Chekc if collection already exists we delete it
-    if db.has_collection(thesaurus_config['name']):
-        db.delete_collection(thesaurus_config['name'])
-        db.delete_collection(thesaurus_config['name'] + "_EDGES")
+    nodes_collection, edges_collection = get_collections(db, thesaurus_config['name'])
 
-    nodes = db.create_collection(thesaurus_config['name'])
-    edges = db.create_collection(thesaurus_config['name'] + "_EDGES", edge=True)
-
-    nodes.truncate()
-    edges.truncate()
+    nodes_collection.truncate()
+    edges_collection.truncate()
 
     print("Processing nodes...")
 
-    new_nodes = nodes.insert_many(thesaurus['nodes'], return_new=True)
+    new_nodes = nodes_collection.insert_many(thesaurus['nodes'], return_new=True)
 
     print("Processing edges...")
 
@@ -77,7 +86,7 @@ def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, th
         if start and to:
             edge["_from"] = start['_id']
             del edge["start"]
-            
+
             edge["_to"] = to['_id']
             del edge["end"]
 
@@ -88,14 +97,13 @@ def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, th
 
     print(f"Skipped {skip} edges out of {len(thesaurus['relationships'])}")
 
-    result = edges.insert_many(thesaurus['relationships'], silent=True, raise_on_document_error=True)
+    result = edges_collection.insert_many(thesaurus['relationships'], silent=True, raise_on_document_error=True)
 
     if result:
         print(f"Succesfully imported thesaurus {thesaurus_config['name']}")
         return skipped_edges, new_nodes
-    
-    return [], [] #Import was unsuccessful so we return nothing
 
+    return [], [] #Import was unsuccessful so we return nothing
 
 def fetch_thesaurus(thesori_config_list: dict) -> list:
     """  
@@ -105,14 +113,14 @@ def fetch_thesaurus(thesori_config_list: dict) -> list:
     for thesaurus in thesori_config_list:
         api_url : str = thesaurus["source"]
         print(f"Requesting thesaurus {api_url} ...")
-        response : requests.models.Response  = requests.get(api_url)
+        response : requests.models.Response  = requests.get(api_url, {"login" : "marwan.russier", "password" : "Rydxos-xifnyz-bocte7"})
         if response.status_code == 200:
             theso_list.append(response.json())
             print(f"Thesaurus {thesaurus['source']} succesfully fetched from remote")
         else :
+            theso_list.append(None)
             print(f"Error fetching thesaurus {thesaurus['source']}")
     return theso_list
-
 
 def generate_inter_thesauri_edges(db : database.StandardDatabase, all_nodes : list, edges : list) -> list:
     """
@@ -165,7 +173,7 @@ def generate_inter_thesauri_edges(db : database.StandardDatabase, all_nodes : li
     print("Inserted Shared_EDGES")
     return edges_collection.insert_many(edges, return_new=True)
 
-# These two functions work on a different kind of import, which is much more detailed
+# These functions work on the raw import, which is much more detailed
 
 def create_thesaurus_dict(parsed_thesaurus : dict) -> list:
 
@@ -227,7 +235,7 @@ def create_thesaurus_dict(parsed_thesaurus : dict) -> list:
         thesaurus.append(annotation)
     return thesaurus
 
-def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str) -> list:
+def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str, weights : dict) -> list:
     # I could have done it all inside of a single function, but I'm splitting for readability (in spite of performance) since
     # we won't do this often, and it is bottlenecked by the internet connexion anyway
     relations_list : list = []
@@ -252,7 +260,8 @@ def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str) ->
                 relations_list.append({
                     "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
                     "_to" : to_key,
-                    "type" : "broader"
+                    "type" : "broader",
+                    "weight" : weights['broader']
                 })
 
         if narrower in parsed_thesaurus[entry]:
@@ -260,7 +269,8 @@ def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str) ->
                 relations_list.append({
                     "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
                     "_to" : to_key,
-                    "type" : "narrower"
+                    "type" : "narrower",
+                    "weight" : weights['narrower']
                 })
 
         if related in parsed_thesaurus[entry]:
@@ -268,14 +278,43 @@ def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str) ->
                 relations_list.append({
                     "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
                     "_to" : to_key,
-                    "type" : "related"
+                    "type" : "related",
+                    "weight" : weights['related']
+                })
+
+        if exact_match in parsed_thesaurus[entry]:
+            for relation in parsed_thesaurus[entry][exact_match]:
+                relations_list.append({
+                    "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
+                    "_to" : to_key,
+                    "type" : "exactMatch",
+                    "weight" : weights['exactMatch']
+                })
+
+        if close_match in parsed_thesaurus[entry]:
+            for relation in parsed_thesaurus[entry][close_match]:
+                relations_list.append({
+                    "_from" : thesaurus_name + '/' + relation["value"].split("/")[-1],
+                    "_to" : to_key,
+                    "type" : "closeMatch",
+                    "weight" : weights['closeMatch']
                 })
 
     return relations_list
 
+def insert_raw_thesaurus(db : database.StandardDatabase, thesaurus : dict, name : str, weights : dict):
+    nodes_collection, edges_collection = get_collections(db, name)
 
+    nodes_collection.truncate()
+    edges_collection.truncate()
 
+    theso_clean = {
+        "nodes": create_thesaurus_dict(thesaurus),
+        "relationships": create_thesaurus_relations(thesaurus, name, weights)
+    }
 
+    nodes_collection.insert_many(theso_clean['nodes'])
+    edges_collection.insert_many(theso_clean['relationships'])
 
 
 if __name__ == '__main__':
@@ -291,6 +330,15 @@ if __name__ == '__main__':
     all_new_nodes = []
     interThesaurusEdges = []
 
+    weights_a = {
+        'narrower' : 1,
+        'broader' : 1,
+        'related' : 3,
+        'closeMatch' : 1.5,
+        'exactMatch' : 0
+    }
+
+
     # Connect to "_system" database as root user.
     # This returns an API wrapper for "_system" database.
     sys_db = client.db('_system', username='root', password='test')
@@ -303,9 +351,19 @@ if __name__ == '__main__':
 
 
     for i in range(len(thesoList)):
-        skipped, added = insert_thesaurus(database, config["thesauri"][i], thesoList[i])
-        interThesaurusEdges += skipped
-        all_new_nodes += added
+        if thesoList[i] is None:
+            continue
 
-    if interThesaurusEdges != [[]] and all_new_nodes != []:
-        print(generate_inter_thesauri_edges(database, all_new_nodes, interThesaurusEdges))
+
+
+        if config["thesauri"][i]["type"] == 'raw' :
+            insert_raw_thesaurus(database, thesoList[i], config["thesauri"][i]["name"], weights_a)
+        elif config["thesauri"][i]["type"] == 'graph':
+            skipped, added = insert_thesaurus(database, config["thesauri"][i], thesoList[i])
+            interThesaurusEdges += skipped
+            all_new_nodes += added
+
+            if interThesaurusEdges != [[]] and all_new_nodes != []:
+                print(generate_inter_thesauri_edges(database, all_new_nodes, interThesaurusEdges))
+        else:
+            print("Thesaurus type not recognized")
