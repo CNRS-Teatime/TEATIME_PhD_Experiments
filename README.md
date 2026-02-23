@@ -50,37 +50,32 @@ A config file is composed as follows (boilerplate information inside the example
     "credentials": {
         "host" : "http://localhost:8529", 
         "username" : "user",
-        "password" : "password"
+        "password" : "password", 
+        "database" : "DATABASENAME"
     },
     "thesauri" : [
         {
             "name" : "PREFERED NAME 1",
-            "database" : "DATABASENAME",
+
             "source" : "https://your.web.link/openapi/v1/graph/getData?dThesoConcept=ID",
-            "types" : [
-                "nodes",
-                "edges"
-            ],
-            "nodeListName" : "nodes",
-            "edgeListName" : "relationships"
+            "type" : "graph" 
         },
         {
             "name" : "PREFERED NAME 2",
-            "database" : "DATABASENAME",
-            "source" : "https://your.web.link/openapi/v1/graph/getData?dThesoConcept=ID",
-            "types" : [
-                "nodes",
-                "edges"
-            ],
-            "nodeListName" : "nodes",
-            "edgeListName" : "relationships"
+            "source" : "https://your.web.link/openapi/v1/thesaurus/ID",
+            "type" : "raw" 
         }
     ]
 }
 ```
 
 The JSON Schema is available in `theso-config-schema.json`. All config files given to the tool are validated against it.
-The `credentials` section refers to the url and login of the desired ArangoDB instance. While the `thesauri` section is a list of graphs to import to ArandoDB, consisting of the associated *GET* Request in the `source` field, a name and the DATABASE name in wich to store it. The database will be created if it doesnt exist if you have the default ArangoDB ROOT username and password, otherwise you will have to use an ==already existing database==.
+The `credentials` section refers to the url and login of the desired ArangoDB instance as well as the database name to use inside of this instance. While the `thesauri` section is a list of graphs to import to ArandoDB, consisting of the associated *GET* Request in the `source` field, a name and the type of import that the Request will return. There are two types of import that are supported (unsupported types are ignored) :
+
+- `'raw'` : These are thesaurus that are not pre-formated as a graph by the opentheso instance. They usually contain much more information and are faster to fetch from the server. This is the recommended format. In opentheso, they are the requests that end with `/thesaurus/ID`
+- `'graph'` : These are the pre-formated graphs that represent a thesaurus. They are missing some information. In opentheso, they are the requests that end with `/graph/getData?dThesoConcept=ID`
+
+The database will be created if it doesnt exist if you have the default ArangoDB ROOT username and password, otherwise you will have to use an ==already existing database==.
 
 > You can use the `config-BOILERPLATE.json` file and replace the values with your own to easily start creating a custom config file.
 
