@@ -35,6 +35,15 @@ def get_config(config_path: str, schema_path: str = None) -> dict:
             return config_list
 
 def get_collections(db : database.StandardDatabase, name: str) -> tuple[database.StandardCollection, database.StandardCollection] :
+    """
+    Create or truncate the collections with name `name` and `name_relation` and returns the standard API wrapper for ArangoDB collections
+    :param db: The arangoDB database wrapper
+    :type db: database.StandardDatabase
+    :param name: The chosen collection name
+    :type name: str
+    :returns: A tuple with the document collection and edge collection fetched.
+    """
+
     if db.has_collection(name):
         nodes_collection : database.StandardCollection = db.collection(name)
         nodes_collection.truncate()
@@ -107,7 +116,10 @@ def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, th
 
 def fetch_thesaurus(thesori_config_list: dict) -> list:
     """  
-    Goes throught the list of thesaurus configuration and fetches each one individually via a REST GET request
+    Goes through the list of thesaurus configuration and fetches each one individually via a REST GET request
+    :param thesori_config_list: a dictionnary containing all the thesaurus config, the schema is in config/theso-config-schema.json
+    :type thesori_config_list: dict
+    :returns: A list of the fetched thesaurus, each one being a dict parsed with the JSON library.
     """
     theso_list : list = []
     for thesaurus in thesori_config_list:
@@ -176,7 +188,14 @@ def generate_inter_thesauri_edges(db : database.StandardDatabase, all_nodes : li
 # These functions work on the raw import, which is much more detailed
 
 def create_thesaurus_dict(parsed_thesaurus : dict) -> list:
+    """
+        Creates an arangoDB formated list of thesaurus entry, from the raw thesaurus fetched from openTheso. We use the URI's of each type of entry to figure out
+        where the interesting data is in the raw thesaurus.
 
+        :param parsed_thesaurus: Raw thesaurus, fetched from opentheso and parsed into a dict by the JSON library
+        :type parsed_thesaurus: dict
+        :returns: The list of documents created, that needs to be inserted into the ArangoDB collection. Each document being a thesaurus entry stored as a dict
+    """
     thesaurus : list = []
 
     for entry in parsed_thesaurus:
@@ -236,6 +255,20 @@ def create_thesaurus_dict(parsed_thesaurus : dict) -> list:
     return thesaurus
 
 def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str, weights : dict) -> list:
+    """
+        Creates thesaurus relations from the raw thesaurus data fetched from openTheso
+
+        :param parsed_thesaurus: Raw thesaurus, fetched from opentheso and parsed into a dict by the JSON library
+        :type parsed_thesaurus: dict
+        :param thesaurus_name: The name of the thesaurus, needed to know the full document ID and create edges
+        :type thesaurus_name: str
+        :param weights: A dictionary containing edge weight for each type of weight in the format {'narrower' : 1, 'broader' : 1, 'related' : 3, 'closeMatch' : 1.5,
+        'exactMatch' : 0}
+        :type weights: dict
+        :returns: The list of edges created, that needs to be inserted into the ArangoDB collection. Each edge being stored as a dict
+    """
+
+
     # I could have done it all inside of a single function, but I'm splitting for readability (in spite of performance) since
     # we won't do this often, and it is bottlenecked by the internet connexion anyway
     relations_list : list = []
