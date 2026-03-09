@@ -20,16 +20,20 @@ def create_graph(db : database.StandardDatabase, graph_list : list) -> None:
             )
         print(f"Created graph {g["name"]}")
 
+def create_graph_from_config(config_path : str):
+    config: dict = get_config(config_path, "config/graph-config-schema.json")
+    credentials: dict = config["credentials"]
+    graphs: list = config["graphs"]
+
+    client: ArangoClient = ArangoClient(hosts=credentials['host'])
+    curr_db: database.StandardDatabase = client.db(credentials['database'], username=credentials['username'],
+                                                   password=credentials['password'])
+
+    create_graph(curr_db, graphs)
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print("Please provide config file path as first argument")
         sys.exit()
 
-    config : dict = get_config(sys.argv[1], "config/graph-config-schema.json")
-    credentials : dict = config["credentials"]
-    graphs : list = config["graphs"]
-
-    client : ArangoClient = ArangoClient(hosts=credentials['host'])
-    curr_db : database.StandardDatabase = client.db(credentials['database'], username=credentials['username'], password=credentials['password'])
-
-    create_graph(curr_db, graphs)
+    create_graph_from_config(sys.argv[1])

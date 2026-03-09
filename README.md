@@ -39,9 +39,46 @@ python3 -m pip install -r requirements.txt
 
 More info here : https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/
 
-## Opentheso importer
+## Usage
+Here is a list of all the available options
 
-The opentheso importer uses json configuration files and the opentheso REST API to fetch graph data from an opentheso instance, clean it, and store it in a dedicated arangoDB Graph Database.
+| Argument           | Description                                                                       | Example                                   |
+|--------------------|-----------------------------------------------------------------------------------|-------------------------------------------|
+| --thesaurus-config | The path to the thesaurus fetching configuration file                             | --thesaurus-config config/thesarauri.json |
+| --graph-config     | The path to the graph creation configuration file                                 | --graph-config config/graphs.json         |
+| --cleanup          | A boolean definining if a full db cleanup needs to be perfomed (default is false) | --cleanup True                            |
+
+And the dump import specific option, which all needs to be set for the dump import to work correctly (as of now) but are not needed for the other types of import :
+
+| Argument      | Description                                                                       | Example                                   |
+|---------------|-----------------------------------------------------------------------------------|-------------------------------------------|
+| --dump-path   | The path to the graph creation configuration file                                 | --dump-path path/to/dump                  |
+| --db-address  | The url to the desired arango instance (dump specific)                            | --db-adress http://localhost:8529         |
+| --db-name     | The name of the database inside the arango instance (dump specific)               | --db-name NAME                            |
+| --db-user     | Your username (dump specific)                                                     | --db-user USERNAME                        |
+| --db-password | Your password (dump specific)                                                     | --db-password 1234                        |
+
+
+example usage : 
+```bash
+python3 main.py --graph-config [path-to-config]
+```
+
+```bash
+python3 main.py --thesaurus-config [path-to-config] --cleanup True
+```
+
+```bash
+python3 main.py --dump-path path/to/dump --db-address http://localhost:8529 --db-name NAME --db-user USERNAME --db-password 1234
+```
+
+## Feature specific information
+
+### Opentheso importer
+
+The opentheso importer uses json configuration files and the opentheso REST API to fetch graph data from an opentheso instance, clean it, 
+and store it in a dedicated arangoDB Graph Database.
+It is used with the `--thesaurus-config` option.
 
 A config file is composed as follows (boilerplate information inside the example, it wont work as is) : 
 
@@ -79,21 +116,81 @@ The database will be created if it doesnt exist if you have the default ArangoDB
 
 > You can use the `config-BOILERPLATE.json` file and replace the values with your own to easily start creating a custom config file.
 
-To run the tool simply run the `create-thesaurus.py` python script inside the virtual environment that you set up in the installation section. Having a valid `config.json` in the same directory as the script is **mandatory**.
+### Graph maker
 
-```bash
-python3 create-thesaurus.py
+The graph maker will initialize ArangoDB graphs based on a configuration file, specifying edge and document collections for each graph.
+Its purpose is to increase repoducibility, and reduce human errors during experimentations. It is used
+with the `--graph-config option`
+
+A config file is composed as follows (boilerplate information inside the example, it wont work as is) :
+```JSON
+{
+    "credentials": {
+        "host" : "http://localhost:8529",
+        "username" : "user",
+        "password" : "password",
+        "database" : "DATABASENAME"
+    },
+    "graphs" : [
+        {
+            "name" : "PREFERED NAME 1",
+            "relations" : [
+                {
+                    "edge_collection" : "EDGE COLLECTION NAME",
+                    "from_vertex_collections" : [
+                        "COLLECTION 1",
+                        "COLLECTION 2"
+                    ],
+                    "to_vertex_collections" : [
+                        "COLLECTION 3",
+                        "COLLECTION 4"
+                    ]
+                }
+            ]
+        },
+        {
+            "name" : "PREFERED NAME 2",
+            "relations" : [
+                {
+                    "edge_collection" : "EDGE COLLECTION NAME",
+                    "from_vertex_collections" : [
+                        "COLLECTION 1",
+                        "COLLECTION 2"
+                    ],
+                    "to_vertex_collections" : [
+                        "COLLECTION 3",
+                        "COLLECTION 4"
+                    ]
+                }
+            ]
+        }
+    ]
+}
 ```
 
+The JSON Schema is available in `graph-config-schema.json`. All config files given to the tool are validated against it.
+The credentials section is identical to the one in the thesaurus configuration file. Each graph entry then asks for a name,
+a singular edge collection and two list of incoming and outgoing collections (which can be identical). The collections must already
+exist in the database, otherwise the graph will not be created.
+
+You can use `config-graph-BOILERPLATE.json` as a base to create your own configuration files.
+
+### Dump importer
+
+The dump impoter will populate a database using an arangoDB dump, contained in a given folder. A dump is simply a collection
+of JSON files, in the arangoDB format, which can be obtained by fetching an arangoDB database.
+Its primary use is saving Database states for later use.
+
+It is used with the `--dump-path` options and its associated arguments (see usage).
 
 ## Roadmap
 
 - [x] [Opentheso](https://opentheso.hypotheses.org/introduction) to ArangoDB importer
-- [ ] [Aioli](https://www.map.cnrs.fr/fr/recherche/projets/aioli/) to ArangoDB importer
-  * How to build edges between annotations ?
-  * What granularity for each information inside the annotation ?
-  * Should annotations be nodes or subgraphs ? 
-- [ ] Visualising ArangoDB graphs with D3Js (D3 frontend + Backend supported by ArangoDB)
+- [x] [Aioli](https://www.map.cnrs.fr/fr/recherche/projets/aioli/) to ArangoDB importer
+  * It is covered by the dump importer, as Aiolï's API is not adapted to our use case
+- [ ] [Semantic distance](https://github.com/VCityTeam/VCity/blob/master/Projects/Phd_Marwan_Ait_Addi_Russier/Recherches/Distance%20thesaurique.md) experiments
+- [ ] NLP Experiments
+- [ ] Visualizing ArangoDB graphs with D3Js (D3 frontend + Backend supported by ArangoDB)
 
 ## License
 This work is licenced under GNU GPL v3.0

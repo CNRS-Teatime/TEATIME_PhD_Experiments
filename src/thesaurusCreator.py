@@ -58,7 +58,7 @@ def get_collections(db : database.StandardDatabase, name: str) -> tuple[database
 
     return nodes_collection, edges_collection
 
-def insert_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, thesaurus : dict):
+def insert_graph_thesaurus(db : database.StandardDatabase, thesaurus_config : dict, thesaurus : dict):
     """
     Insert a thesaurus into a designated Arango Database using its configuration and JSON. If the insertion is unsuccesful, the tuple will contain two empty lists.
 
@@ -336,6 +336,9 @@ def create_thesaurus_relations(parsed_thesaurus : dict, thesaurus_name : str, we
     return relations_list
 
 def insert_raw_thesaurus(db : database.StandardDatabase, thesaurus : dict, name : str, weights : dict):
+    """
+    TODO : docstring
+    """
     nodes_collection, edges_collection = get_collections(db, name)
 
     nodes_collection.truncate()
@@ -349,28 +352,35 @@ def insert_raw_thesaurus(db : database.StandardDatabase, thesaurus : dict, name 
     nodes_collection.insert_many(theso_clean['nodes'])
     edges_collection.insert_many(theso_clean['relationships'])
 
+# And this is the main function, that can take care of everything with a simple configuration file
 
-if __name__ == '__main__':
+def create_thesaurus_from_config(config_path : str, weights : dict = None):
+    """
+    Creates all the needed thesaurus and insterts them into the correct ArangoDB instance and collections according to the given configuration
+    the configuration schema is available in `config/theso-config-schema.json` and a boilerplate in `config/config-thesaurus-boilerplate.json`
 
-    if len(sys.argv) != 2:
-        print("Please provide config file path as first argument")
-        sys.exit()
+    :param config_path: The path to the JSON configuration file
+    :type config_path: str
+    :param weights: An optional dictionary containing edge weight for each type of weight in the format {'narrower' : 1, 'broader' : 1, 'related' : 3, 'closeMatch' : 1.5, 'exactMatch' : 0}
+    if nothing is given default weights will be used.
+    :type weights: dict
+    """
+    if weights is None : # If no weights are defined we use the default ones (these are arbitrary)
+        weights = {
+            'narrower' : 1,
+            'broader' : 1,
+            'related' : 3,
+            'closeMatch' : 1.5,
+            'exactMatch' : 0
+        }
 
-    config = get_config(sys.argv[1], "config/theso-config-schema.json")
+    # Here we prepare the database API
+    config = get_config(config_path, "config/theso-config-schema.json")
     credentials = config['credentials']
-    thesoList = fetch_thesaurus(config["thesauri"])
+    theso_list = fetch_thesaurus(config["thesauri"])
     client = ArangoClient(hosts=credentials['host'])
-    all_new_nodes = []
-    interThesaurusEdges = []
-
-    weights_a = {
-        'narrower' : 1,
-        'broader' : 1,
-        'related' : 3,
-        'closeMatch' : 1.5,
-        'exactMatch' : 0
-    }
-
+    """all_new_nodes = []
+    interThesaurusEdges = []"""
 
     # Connect to "_system" database as root user.
     # This returns an API wrapper for "_system" database.
@@ -380,23 +390,29 @@ if __name__ == '__main__':
     if not sys_db.has_database(credentials['database']):
         sys_db.create_database(credentials['database'])
 
-    database = client.db(credentials['database'], username=credentials['username'], password=credentials['password'])
+    db : database.StandardDatabase = client.db(credentials['database'], username=credentials['username'], password=credentials['password'])
 
-
-    for i in range(len(thesoList)):
-        if thesoList[i] is None:
+    for i in range(len(theso_list)):
+        if theso_list[i] is None:
             continue
 
-
-
-        if config["thesauri"][i]["type"] == 'raw' :
-            insert_raw_thesaurus(database, thesoList[i], config["thesauri"][i]["name"], weights_a)
+        if config["thesauri"][i]["type"] == 'raw':
+            insert_raw_thesaurus(db, theso_list[i], config["thesauri"][i]["name"], weights)
         elif config["thesauri"][i]["type"] == 'graph':
-            skipped, added = insert_thesaurus(database, config["thesauri"][i], thesoList[i])
-            interThesaurusEdges += skipped
+            insert_graph_thesaurus(db, config["thesauri"][i], theso_list[i])
+            # Removed because it not relevant anymore (if you want inter thesaurus edges, you should use the raw import)
+            """interThesaurusEdges += skipped
             all_new_nodes += added
 
             if interThesaurusEdges != [[]] and all_new_nodes != []:
-                print(generate_inter_thesauri_edges(database, all_new_nodes, interThesaurusEdges))
+                print(generate_inter_thesauri_edges(database, all_new_nodes, interThesaurusEdges))"""
         else:
             print("Thesaurus type not recognized")
+
+if __name__ == '__main__':
+
+    if len(sys.argv) != 2:
+        print("Please provide config file path as first argument")
+        sys.exit()
+
+    create_thesaurus_from_config(sys.argv[1])

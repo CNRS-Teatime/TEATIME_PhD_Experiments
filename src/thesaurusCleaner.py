@@ -18,13 +18,12 @@ def cleanup_document_collection(db : database.StandardDatabase, collection_name 
             db.aql.execute("\
                 FOR doc IN @@collection \
                     COLLECT myid = doc.ark INTO keys = doc._key \
-                    LET allButFirst = SLICE(keys, 1) // or SHIFT(keys) \
+                    LET allButFirst = SLICE(keys, 1) \
                     FOR k IN allButFirst \
                         REMOVE k IN @@collection",
                 bind_vars={"@collection" : collection_name})
         else:
             print(f"{collection_name} is an edge collection, cannot perform this type of cleanup")
-
 
 def cleanup_edge_collection(db : database.StandardDatabase, collection_name : str):
     """
@@ -34,11 +33,6 @@ def cleanup_edge_collection(db : database.StandardDatabase, collection_name : st
         print(f"Collection {collection_name} does not exist")
     else:
         if db.collection(collection_name).properties()['edge'] :
-            """db.aql.execute("\
-                        FOR doc IN @@collection \
-                            FILTER CONTAINS(doc._to, 'undefined') OR CONTAINS(doc._from, 'undefined')\
-                        REMOVE doc IN @@collection",
-                        bind_vars={"@collection": collection_name})"""
 
             #Now we want to test every document in the edges to see if they exist
             #It feels very trashy tho
@@ -47,11 +41,9 @@ def cleanup_edge_collection(db : database.StandardDatabase, collection_name : st
                     _to = db.document(edge['_to'])
                     _from = db.document(edge['_from'])
                     if _to is None or _from is None:
-                        print(edge)
                         db.collection(collection_name).delete(edge)
 
                 except (exceptions.DocumentGetError, exceptions.DocumentRevisionError) as e:
-                    print(edge)
                     db.collection(collection_name).delete(edge)
         else:
             print(f"{collection_name} is not an edge collection, cannot perform this type of cleanup")
@@ -59,9 +51,24 @@ def cleanup_edge_collection(db : database.StandardDatabase, collection_name : st
 
     return
 
+def cleanup_database(host: str, db_name: str, user: str, password: str):
+    client: ArangoClient = ArangoClient(hosts=host)
+    db: database.StandardDatabase = client.db(db_name, username=user,
+                                              password=password)
+
+    collections = db.collections()
+
+    for coll in collections:
+        if not coll['system']:
+            if db.collection(coll['name']).properties()['edge']:
+                cleanup_edge_collection(db, coll['name'])
+            else:
+                cleanup_document_collection(db, coll['name'])
+
 if __name__ == "__main__":
-    client = ArangoClient("http://localhost:8529")
+    testclient = ArangoClient("http://localhost:8529")
 
-    database = client.db("TEATIME","root","test")
+    testdatabase = testclient.db("TEATIME","root","test")
 
-    cleanup_edge_collection(database, "th15_relations")
+    cleanup_document_collection(testdatabase, "th15")
+    cleanup_edge_collection(testdatabase, "th15_relations")
