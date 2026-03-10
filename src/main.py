@@ -1,6 +1,6 @@
 import argparse
 
-from src import thesaurusCreator, thesaurusCleaner, graphCreator, dumpImporter
+import thesaurusCreator, thesaurusCleaner, graphCreator, dumpImporter
 
 def parse_command_line():
     """
