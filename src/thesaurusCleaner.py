@@ -70,5 +70,4 @@ if __name__ == "__main__":
 
     testdatabase = testclient.db("TEATIME","root","test")
 
-    cleanup_document_collection(testdatabase, "th15")
     cleanup_edge_collection(testdatabase, "th15_relations")

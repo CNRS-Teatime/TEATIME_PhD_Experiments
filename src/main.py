@@ -27,6 +27,8 @@ def parse_command_line():
     # Cleanup boolean
     parser.add_argument('--cleanup', '-c', type=bool, default=False, help='Whether or not to perform cleanup after creating or populating a collection')
 
+    parser.add_argument('--add-weights-to-coll', '-a', type=str, help='A collection, to whom you want to add default weights')
+
     return parser.parse_known_args()[0]
 
 def main():
@@ -39,11 +41,15 @@ def main():
         graphCreator.create_graph_from_config(args.graph_config)
 
     if args.db_address and args.db_name and args.db_user and args.db_password:
+        if args.add_weights_to_coll:
+            thesaurusCreator.add_weights_with_args(args.db_address, args.db_name, args.db_user, args.db_password, args.add_weights_to_coll)
+
         if args.dump_folder:
             dumpImporter.import_from_dump_main(args.db_address, args.db_name, args.db_user, args.db_password, args.dump_folder)
 
         if args.cleanup:
             thesaurusCleaner.cleanup_database(args.db_address, args.db_name, args.db_user, args.db_password)
+
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ This project is composed of a few D3Js force graphs implementations and  arangoD
 
 ## Installation
 
-Python 3.14 is required to run the scripts (no other versions have been tested but they might work)
+Python 3.12 is required, because spaCy does not support python 3.13 and higher yet
 
 We recommend using a virtual python environment through the [venv](https://docs.python.org/3/library/venv.html) python package. Simply replace `{foldername}` in the following command with the desired environment name (for ex Debug).
 ```bash
@@ -48,15 +48,16 @@ Here is a list of all the available options
 | --graph-config     | The path to the graph creation configuration file                                 | --graph-config config/graphs.json         |
 | --cleanup          | A boolean definining if a full db cleanup needs to be perfomed (default is false) | --cleanup True                            |
 
-And the dump import specific option, which all needs to be set for the dump import to work correctly (as of now) but are not needed for the other types of import :
+And the dump import/weight adding specific option, which all needs to be set for the dump import to work correctly (as of now) but are not needed for the other types of import :
 
-| Argument      | Description                                                                       | Example                                   |
-|---------------|-----------------------------------------------------------------------------------|-------------------------------------------|
-| --dump-path   | The path to the graph creation configuration file                                 | --dump-path path/to/dump                  |
-| --db-address  | The url to the desired arango instance (dump specific)                            | --db-adress http://localhost:8529         |
-| --db-name     | The name of the database inside the arango instance (dump specific)               | --db-name NAME                            |
-| --db-user     | Your username (dump specific)                                                     | --db-user USERNAME                        |
-| --db-password | Your password (dump specific)                                                     | --db-password 1234                        |
+| Argument                | Description                                                         | Example                              |
+|-------------------------|---------------------------------------------------------------------|--------------------------------------|
+| --dump-path             | The path to the graph creation configuration file                   | --dump-path path/to/dump             |
+| --db-address            | The url to the desired arango instance (dump specific)              | --db-adress http://localhost:8529    |
+| --db-name               | The name of the database inside the arango instance (dump specific) | --db-name NAME                       |
+| --db-user               | Your username (dump specific)                                       | --db-user USERNAME                   |
+| --db-password           | Your password (dump specific)                                       | --db-password 1234                   |
+| ----add-weights-to-coll | An existing weight collection, where default weights will be added  | --add-weights-to-coll th15_relations |
 
 
 example usage : 

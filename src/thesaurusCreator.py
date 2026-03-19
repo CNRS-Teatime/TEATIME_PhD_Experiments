@@ -409,10 +409,59 @@ def create_thesaurus_from_config(config_path : str, weights : dict = None):
         else:
             print("Thesaurus type not recognized")
 
+def add_weights_to_collection(db : database.StandardDatabase, coll_name : str, weights : dict = None):
+    """
+    TODO : Docstring
+    """
+    if not db.has_collection(coll_name) :
+        print(f"The given collection '{coll_name}' does not exist")
+        return
+
+    collection = db.collection(coll_name)
+
+    if not collection.properties()['edge']: #Testing if it is an edge collection
+        print(f"Cannot add weight on document collection {coll_name}")
+        return
+
+    if weights is None : # If no weights are defined we use the default ones (these are arbitrary)
+        weights = {
+            'narrower' : 1,
+            'broader' : 1,
+            'related' : 3,
+            'closeMatch' : 1.5,
+            'exactMatch' : 0
+        }
+
+    coll_cursor = collection.all()
+    coll_dict = [_ for _ in coll_cursor]
+
+    for edge in coll_dict:
+        match edge['type']:
+            case 'narrower':
+                edge['weight'] = weights['narrower']
+            case 'broader':
+                edge['weight'] = weights['broader']
+            case 'related':
+                edge['weight'] = weights['related']
+            case 'closeMatch':
+                edge['weight'] = weights['closeMatch']
+            case 'exactMatch':
+                edge['weight'] = weights['exactMatch']
+            case _:
+                edge['weight'] = 1
+
+    collection.update_many(coll_dict)
+
+def add_weights_with_args(host: str, db_name: str, user: str, password: str, coll_name: str):
+    client: ArangoClient = ArangoClient(hosts=host)
+    db: database.StandardDatabase = client.db(db_name, username=user,
+                                                  password=password)
+
+    add_weights_to_collection(db, coll_name)
+
 if __name__ == '__main__':
+    testclient = ArangoClient("http://localhost:8529")
 
-    if len(sys.argv) != 2:
-        print("Please provide config file path as first argument")
-        sys.exit()
+    testdatabase = testclient.db("TEATIME", "root", "test")
 
-    create_thesaurus_from_config(sys.argv[1])
+    add_weights_to_collection(testdatabase, "th15_relations")
