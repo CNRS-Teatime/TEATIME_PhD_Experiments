@@ -3,29 +3,6 @@
     "description": "Configuration of the openTheso to arangoDB Python tool",
     "type": "object",
     "properties": {
-        "credentials": {
-            "type": "object",
-            "properties": {
-                "host": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "username": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 1
-                }
-            },
-            "required": [
-                "host",
-                "username",
-                "password",
-                "database"
-            ]
-        },
         "thesauri": {
             "type": "array",
             "description": "List of thesaurus specific config",
@@ -55,7 +32,6 @@
         }
     },
     "required": [
-        "credentials",
         "thesauri"
     ]
 }

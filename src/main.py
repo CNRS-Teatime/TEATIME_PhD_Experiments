@@ -1,4 +1,6 @@
-import argparse
+import argparse, os
+
+from dotenv import load_dotenv
 
 import thesaurusCreator, thesaurusCleaner, graphCreator, dumpImporter
 
@@ -16,14 +18,6 @@ def parse_command_line():
     parser.add_argument('--graph-config', '--graph-path', '-g', type=str, help='The path to the graph creation configuration file')
     # Dump folder path
     parser.add_argument('--dump-folder', '--dump-path', '-d', type=str, help='The path a folder containing an arangoDB Dump as a JSON')
-
-    # Credentials, for the cleanup and dump things
-    # I should move that to a .env
-    parser.add_argument('--db-address', type=str, help='The URL of the target ArangoDB instance')
-    parser.add_argument('--db-name', type=str)
-    parser.add_argument('--db-user', type=str)
-    parser.add_argument('--db-password', type=str)
-
     # Cleanup boolean
     parser.add_argument('--cleanup', '-c', type=bool, default=False, help='Whether or not to perform cleanup after creating or populating a collection')
 
@@ -33,6 +27,7 @@ def parse_command_line():
 
 def main():
     args = parse_command_line()
+    load_dotenv()
 
     if args.thesaurus_config:
         thesaurusCreator.create_thesaurus_from_config(args.thesaurus_config)
@@ -42,13 +37,13 @@ def main():
 
     if args.db_address and args.db_name and args.db_user and args.db_password:
         if args.add_weights_to_coll:
-            thesaurusCreator.add_weights_with_args(args.db_address, args.db_name, args.db_user, args.db_password, args.add_weights_to_coll)
+            thesaurusCreator.add_weights_with_args(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), args.add_weights_to_coll)
 
         if args.dump_folder:
-            dumpImporter.import_from_dump_main(args.db_address, args.db_name, args.db_user, args.db_password, args.dump_folder)
+            dumpImporter.import_from_dump_main(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), args.dump_folder)
 
         if args.cleanup:
-            thesaurusCleaner.cleanup_database(args.db_address, args.db_name, args.db_user, args.db_password)
+            thesaurusCleaner.cleanup_database(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"))
 
 
 

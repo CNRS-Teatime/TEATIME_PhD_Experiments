@@ -1,10 +1,4 @@
 {
-    "credentials": {
-        "host" : "http://localhost:8529", 
-        "username" : "user",
-        "password" : "password",
-        "database" : "DATABASENAME"
-    },
     "thesauri" : [
         {
             "name" : "PREFERED NAME 1",

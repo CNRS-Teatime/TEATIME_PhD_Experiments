@@ -2,7 +2,7 @@
 Create two new collections from an opentheso database graph
 The scripts takes a JSON config file in entry
 """
-import json, requests, sys
+import json, requests, os
 from arango import ArangoClient, database
 from jsonschema import validate, ValidationError
 
@@ -376,30 +376,29 @@ def create_thesaurus_from_config(config_path : str, weights : dict = None):
 
     # Here we prepare the database API
     config = get_config(config_path, "config/theso-config-schema.json")
-    credentials = config['credentials']
     theso_list = fetch_thesaurus(config["thesauri"])
-    client = ArangoClient(hosts=credentials['host'])
-    """all_new_nodes = []
-    interThesaurusEdges = []"""
+    client: ArangoClient = ArangoClient(hosts=os.getenv("DB_ADDRESS"))
 
     # Connect to "_system" database as root user.
     # This returns an API wrapper for "_system" database.
     sys_db = client.db('_system', username='root', password='test')
 
     # Create the database associated with the thesaurus if it does not exist yet
-    if not sys_db.has_database(credentials['database']):
-        sys_db.create_database(credentials['database'])
+    if not sys_db.has_database(os.getenv("DB_NAME")):
+        sys_db.create_database(os.getenv("DB_NAME"))
 
-    db : database.StandardDatabase = client.db(credentials['database'], username=credentials['username'], password=credentials['password'])
+
+    curr_db: database.StandardDatabase = client.db(name=os.getenv("DB_NAME"), username=os.getenv("DB_USER"),
+                                                   password=os.getenv("DB_PASSWORD"))
 
     for i in range(len(theso_list)):
         if theso_list[i] is None:
             continue
 
         if config["thesauri"][i]["type"] == 'raw':
-            insert_raw_thesaurus(db, theso_list[i], config["thesauri"][i]["name"], weights)
+            insert_raw_thesaurus(curr_db, theso_list[i], config["thesauri"][i]["name"], weights)
         elif config["thesauri"][i]["type"] == 'graph':
-            insert_graph_thesaurus(db, config["thesauri"][i], theso_list[i])
+            insert_graph_thesaurus(curr_db, config["thesauri"][i], theso_list[i])
             # Removed because it not relevant anymore (if you want inter thesaurus edges, you should use the raw import)
             """interThesaurusEdges += skipped
             all_new_nodes += added

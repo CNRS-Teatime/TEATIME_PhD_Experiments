@@ -1,5 +1,5 @@
 
-import sys
+import sys, os
 from thesaurusCreator import get_config
 from arango import ArangoClient, database, graph
 
@@ -22,12 +22,11 @@ def create_graph(db : database.StandardDatabase, graph_list : list) -> None:
 
 def create_graph_from_config(config_path : str):
     config: dict = get_config(config_path, "config/graph-config-schema.json")
-    credentials: dict = config["credentials"]
     graphs: list = config["graphs"]
 
-    client: ArangoClient = ArangoClient(hosts=credentials['host'])
-    curr_db: database.StandardDatabase = client.db(credentials['database'], username=credentials['username'],
-                                                   password=credentials['password'])
+    client: ArangoClient = ArangoClient(hosts=os.getenv("DB_ADDRESS"))
+    curr_db: database.StandardDatabase = client.db(name=os.getenv("DB_NAME"), username=os.getenv("DB_USER"),
+                                                   password=os.getenv("DB_PASSWORD"))
 
     create_graph(curr_db, graphs)
 
