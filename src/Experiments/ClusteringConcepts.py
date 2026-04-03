@@ -29,10 +29,15 @@ def create_linkage_matrix(model) -> np.ndarray:
     return linkage_matrix
 
 def plot_dendrogram(model, **kwargs):
+    plt.title("Hierarchical Clustering Dendrogram")
+    # plot the top three levels of the dendrogram
+
     linkage_matrix = create_linkage_matrix(model)
 
     # Plot the corresponding dendrogram
     dendrogram(linkage_matrix, **kwargs)
+    plt.xlabel("Number of points in node (or index of point if no parenthesis).")
+    plt.show()
 
 def fetch_distance_matrix(file_path : str) -> tuple[list ,np.ndarray]:
     # Rebuilding the matrix from a csv
@@ -51,8 +56,8 @@ def fetch_distance_matrix(file_path : str) -> tuple[list ,np.ndarray]:
         return ids, np.asarray(matrix)
 
 
-if __name__ == "__main__":
-    ids, matrix = fetch_distance_matrix("distance_matrix_th15_graph.csv")
+def compute_clusters(matrix_csv : str, nb_clusters: int):
+    ids, matrix = fetch_distance_matrix(matrix_csv)
 
     clustering = AgglomerativeClustering(metric="precomputed", linkage="average", distance_threshold=0, n_clusters=None)
 
@@ -60,33 +65,36 @@ if __name__ == "__main__":
 
     linkage_matrix = create_linkage_matrix(clustering)
 
-    nb_clusters = 8
-
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
-    clusters = fcluster(linkage_matrix, nb_clusters, criterion='maxclust')
+    return ids, fcluster(linkage_matrix, nb_clusters, criterion='maxclust')
 
+def populate_clusters(nb_clusters, clusters, ids, db_name, db_user, db_password):
+    """
+    Populate clusters by fetching content from arangoDB
+    """
     cluster_with_ids = [[] for _ in range(nb_clusters)]
 
     for i in range(len(ids)):
         cluster_with_ids[clusters[i] - 1].append(ids[i])
-        cluster_with_ids[clusters[i] - 1].append(ids[i])
-
-    print(len(cluster_with_ids[1]))
 
     client = ArangoClient(hosts="http://localhost:8529")
-    db: database.StandardDatabase = client.db("TEATIME", username="root", password="test")
+    db: database.StandardDatabase = client.db(db_name, username=db_user, password=db_password)
     thesaurus_documents: database.StandardCollection = db.collection("th15")
 
-    for cluster in cluster_with_ids:
-        test = thesaurus_documents.get_many(cluster)
-        test = [doc['name'] for doc in test]
+    for i in range(nb_clusters):
+        cluster_with_ids[i] = thesaurus_documents.get_many(cluster_with_ids[i])
+        cluster_with_ids[i] = [doc['name'] for doc in cluster_with_ids[i]]
 
-        print(len(test))
-        print(test)
+    return cluster_with_ids
 
-"""
-plt.title("Hierarchical Clustering Dendrogram")
-# plot the top three levels of the dendrogram
-plot_dendrogram(clustering, truncate_mode="level", p=4)
-plt.xlabel("Number of points in node (or index of point if no parenthesis).")
-plt.show()"""
+
+if __name__ == "__main__":
+
+    NB_CLUSTERS = 18
+
+    # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
+    ids, clusters = compute_clusters("clean_distance_matrix_th15_graph.csv", NB_CLUSTERS)
+
+    fetched_cluster = populate_clusters(NB_CLUSTERS, clusters, ids, "TEATIME", "root", "test")
+    for c in fetched_cluster:
+        print(c)
