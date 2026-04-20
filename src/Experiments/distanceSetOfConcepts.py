@@ -5,7 +5,7 @@ of concepts. This will be usefull for calculating the distance between documents
 import random
 from random import sample
 
-with open("distance_matrix_th15_graph.csv", 'r') as f:
+with open("clean_distance_matrix_th15_graph.csv", 'r') as f:
     ids = f.readline()
     ids = ids.split(',')
     size = len(ids)

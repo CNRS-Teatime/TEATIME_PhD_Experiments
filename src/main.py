@@ -35,15 +35,15 @@ def main():
     if args.graph_config:
         graphCreator.create_graph_from_config(args.graph_config)
 
-    if args.db_address and args.db_name and args.db_user and args.db_password:
-        if args.add_weights_to_coll:
-            thesaurusCreator.add_weights_with_args(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), args.add_weights_to_coll)
 
-        if args.dump_folder:
-            dumpImporter.import_from_dump_main(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), args.dump_folder)
+    if args.add_weights_to_coll:
+        thesaurusCreator.add_weights_with_args(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), args.add_weights_to_coll)
 
-        if args.cleanup:
-            thesaurusCleaner.cleanup_database(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"))
+    if args.dump_folder:
+        dumpImporter.import_from_dump_main(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), args.dump_folder)
+
+    if args.cleanup:
+        thesaurusCleaner.cleanup_database(os.getenv("DB_ADDRESS"), os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"))
 
 
 

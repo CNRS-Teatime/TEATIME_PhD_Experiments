@@ -87,14 +87,32 @@ def populate_clusters(nb_clusters, clusters, ids, db_name, db_user, db_password)
 
     return cluster_with_ids
 
+def add_cluster_back_to_db(nb_clusters, collection_name, clusters, ids, db_name, db_user, db_password):
+    """
+    Populate clusters by fetching content from arangoDB
+    """
+    cluster_with_ids = [[] for _ in range(nb_clusters)]
+
+    for i in range(len(ids)):
+        cluster_with_ids[clusters[i] - 1].append({'_id' : ids[i], 'cluster' : int(clusters[i])})
+
+    client = ArangoClient(hosts="http://localhost:8529")
+    db: database.StandardDatabase = client.db(db_name, username=db_user, password=db_password)
+    thesaurus_documents: database.StandardCollection = db.collection(collection_name)
+
+    for i in range(nb_clusters):
+        thesaurus_documents.update_many(cluster_with_ids[i])
+
 
 if __name__ == "__main__":
 
-    NB_CLUSTERS = 18
+    NB_CLUSTERS = 64
 
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
     ids, clusters = compute_clusters("clean_distance_matrix_th15_graph.csv", NB_CLUSTERS)
 
-    fetched_cluster = populate_clusters(NB_CLUSTERS, clusters, ids, "TEATIME", "root", "test")
+    add_cluster_back_to_db(NB_CLUSTERS, "th15", clusters, ids, "TEATIME", "root", "test")
+
+    """fetched_cluster = populate_clusters(NB_CLUSTERS, clusters, ids, "TEATIME", "root", "test")
     for c in fetched_cluster:
-        print(c)
+        print(c)"""
