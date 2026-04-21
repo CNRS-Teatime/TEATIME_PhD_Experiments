@@ -106,7 +106,7 @@ def add_cluster_back_to_db(nb_clusters, collection_name, clusters, ids, db_name,
 
 if __name__ == "__main__":
 
-    NB_CLUSTERS = 64
+    NB_CLUSTERS = 16
 
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
     ids, clusters = compute_clusters("clean_distance_matrix_th15_graph.csv", NB_CLUSTERS)

@@ -1,18 +1,9 @@
 from arango import ArangoClient, database
 import networkx as nx
-from time import time
 
-def fetch_from_arango(doc_collections : list, edge_collections : list, database_name : str) -> tuple[list, nx.DiGraph]:
+def fetch_from_arango(edge_collections : list, database_name : str) -> nx.DiGraph:
     client = ArangoClient(hosts="http://localhost:8529")
     db: database.StandardDatabase = client.db(database_name, username="root", password="test")
-
-    document_ids: list = []
-
-    for coll in doc_collections:
-        thesaurus_documents: database.StandardCollection = db.collection(coll)
-
-        documents_cursor = thesaurus_documents.all()
-        document_ids.extend([doc['_id'] for doc in documents_cursor])
 
     edges_as_list : list = []
 
@@ -21,15 +12,15 @@ def fetch_from_arango(doc_collections : list, edge_collections : list, database_
         edge_cursor = edge_coll.all()
         edges_as_list.extend([(edge['_from'], edge['_to'], int(edge['weight'])) for edge in edge_cursor])
 
-    G: nx.DiGraph = nx.DiGraph()
-    G.add_nodes_from(document_ids)
-    G.add_weighted_edges_from(edges_as_list)
+    Gr: nx.DiGraph = nx.DiGraph()
+    Gr.add_weighted_edges_from(edges_as_list)
 
-    return document_ids, G
+    return Gr
 
 
-def compute_matrix(G : nx.DiGraph, document_ids_as_list) -> list:
+def compute_matrix(G : nx.DiGraph) -> list:
     length = dict(nx.all_pairs_bellman_ford_path_length(G, weight='weight'))
+    document_ids_as_list = list(G.nodes._nodes.keys())
     n = len(document_ids_as_list)
 
     fail = 0
@@ -55,7 +46,7 @@ def compute_matrix(G : nx.DiGraph, document_ids_as_list) -> list:
     print(f"Fails {(fail/(n*n)) * 100}%")
     return matrix
 
-def write_matrix_to_file(file_name, document_id_list) -> None:
+def write_matrix_to_file(file_name, document_id_list, mat) -> None:
 
     with open(file_name, 'w') as f:
         id_string: str = ""
@@ -66,7 +57,7 @@ def write_matrix_to_file(file_name, document_id_list) -> None:
                 id_string += str(document_id_list[i]) + ','
         f.write(id_string)
 
-        for line in matrix :
+        for line in mat :
             line_string : str = ""
             for i in range(len(line)):
                 if i == len(line) - 1:
@@ -105,10 +96,12 @@ if __name__ == "__main__":
                         ]
     GRAPH_NAME = "IntraTheso"
 
-    doc_id_list, G = fetch_from_arango(DOCUMENT_COLLECTIONS, EDGE_COLLECTIONS, DATABASE)
+    _, G = fetch_from_arango( EDGE_COLLECTIONS, DATABASE)
 
-    matrix = compute_matrix(G, doc_id_list)
+
+
+    matrix = compute_matrix(G)
 
     print(f"{len(matrix)} x {len(matrix[0])} matrix produced")
 
-    write_matrix_to_file(f"distance_matrix_{GRAPH_NAME}.csv", doc_id_list)
+    write_matrix_to_file(f"distance_matrix_{GRAPH_NAME}.csv", list(G.nodes._nodes.keys()), matrix)

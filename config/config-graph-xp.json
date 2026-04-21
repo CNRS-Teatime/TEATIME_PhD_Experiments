@@ -368,6 +368,150 @@
                     ]
                 }
             ]
+        },
+        {
+            "name": "InterTheso_graph",
+            "relations": [
+                {
+                    "edge_collection": "intraTheso_relations",
+                    "from_vertex_collections": [
+                        "th12",
+                        "th13",
+                        "th15",
+                        "th16",
+                        "th18",
+                        "th21",
+                        "th52",
+                        "th53",
+                        "th56",
+                        "th57",
+                        "th58",
+                        "th59"
+                    ],
+                    "to_vertex_collections": [
+                        "th12",
+                        "th13",
+                        "th15",
+                        "th16",
+                        "th18",
+                        "th21",
+                        "th52",
+                        "th53",
+                        "th56",
+                        "th57",
+                        "th58",
+                        "th59"
+                    ]
+                },
+                {
+                    "edge_collection" : "th12_relations",
+                    "from_vertex_collections" : [
+                        "th12"
+                    ],
+                    "to_vertex_collections" : [
+                        "th12"
+                    ]
+                },
+                {
+                    "edge_collection" : "th13_relations",
+                    "from_vertex_collections" : [
+                        "th13"
+                    ],
+                    "to_vertex_collections" : [
+                        "th13"
+                    ]
+                },
+                {
+                    "edge_collection" : "th15_relations",
+                    "from_vertex_collections" : [
+                        "th15"
+                    ],
+                    "to_vertex_collections" : [
+                        "th15"
+                    ]
+                },
+                {
+                    "edge_collection" : "th16_relations",
+                    "from_vertex_collections" : [
+                        "th16"
+                    ],
+                    "to_vertex_collections" : [
+                        "th16"
+                    ]
+                },
+                {
+                    "edge_collection" : "th18_relations",
+                    "from_vertex_collections" : [
+                        "th18"
+                    ],
+                    "to_vertex_collections" : [
+                        "th18"
+                    ]
+                },
+                {
+                    "edge_collection" : "th21_relations",
+                    "from_vertex_collections" : [
+                        "th21"
+                    ],
+                    "to_vertex_collections" : [
+                        "th21"
+                    ]
+                },
+                {
+                    "edge_collection" : "th52_relations",
+                    "from_vertex_collections" : [
+                        "th52"
+                    ],
+                    "to_vertex_collections" : [
+                        "th52"
+                    ]
+                },
+                {
+                    "edge_collection" : "th53_relations",
+                    "from_vertex_collections" : [
+                        "th53"
+                    ],
+                    "to_vertex_collections" : [
+                        "th53"
+                    ]
+                },
+                {
+                    "edge_collection" : "th56_relations",
+                    "from_vertex_collections" : [
+                        "th56"
+                    ],
+                    "to_vertex_collections" : [
+                        "th56"
+                    ]
+                },
+                {
+                    "edge_collection" : "th57_relations",
+                    "from_vertex_collections" : [
+                        "th57"
+                    ],
+                    "to_vertex_collections" : [
+                        "th57"
+                    ]
+                },
+                {
+                    "edge_collection" : "th58_relations",
+                    "from_vertex_collections" : [
+                        "th58"
+                    ],
+                    "to_vertex_collections" : [
+                        "th58"
+                    ]
+                },
+                {
+                    "edge_collection" : "th59_relations",
+                    "from_vertex_collections" : [
+                        "th59"
+                    ],
+                    "to_vertex_collections" : [
+                        "th59"
+                    ]
+                }
+            ]
         }
     ]
 }
