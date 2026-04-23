@@ -3,7 +3,17 @@ from distanceMatrixWithNetworkX import *
 import csv
 
 
-def write_clusters_to_csv(cluster_list, path):
+def write_clusters_to_csv(cluster_list: list[list[str]], path: str):
+    """
+    Writes all the clusterised objects, allong with their cluster ids, in a CSV file.
+    The format for each row is:
+    object_as_string, cluster_number
+
+    :param cluster_list: A 2D list of clusters, cluster_list[1] is the list of all ids in cluster 2
+    :type cluster_list: list[list[str]]
+    :param path: The path to the desired csv file
+    :type path: str
+    """
     with open(path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',',quotechar='"')
         writer.writerow(['element', 'clusterNB'])
