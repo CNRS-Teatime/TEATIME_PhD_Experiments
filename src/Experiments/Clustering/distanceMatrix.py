@@ -1,20 +1,26 @@
+from typing import Optional
 from arango import ArangoClient, database
 import networkx as nx
 
-def fetch_from_arango(edge_collections : list[str], database_name : str) -> nx.DiGraph:
+def fetch_from_arango(graph_name : str, database_name : str) -> Optional[nx.DiGraph]:
     """
     From a list of edge collection, fetches the objects in those collection in the associated database.
     Those edges are inserted inside a networkx directed graph, which is returned by the function
 
-    :param edge_collections: A list of collection name
-    :type edge_collections: list[str]
+    :param graph_name: The graph to fetch in the arangoDB instance
+    :type graph_name: str
     :param database_name: The name of the database the funciton will use to fetch the collections
     :type database_name: str
-    :returns: A networkx directed graph with the fetched edges and arangodb document ids as node labels.
+    :returns: A networkx directed graph with arangodb document ids as node labels, or None if the graph does not exist.
     """
 
     client = ArangoClient(hosts="http://localhost:8529")
     db: database.StandardDatabase = client.db(database_name, username="root", password="test")
+
+    if not db.has_graph(graph_name):
+        return None
+
+    edge_collections : list = db.graph(graph_name).edge_collections()
 
     edges_as_list : list = []
 
@@ -100,37 +106,9 @@ def write_matrix_to_file(file_name : str, document_id_list : list[str], mat: lis
 
 if __name__ == "__main__":
     DATABASE = "TEATIME-Exp"
-    DOCUMENT_COLLECTIONS = ["th12",
-                        "th13",
-                        "th15",
-                        "th16",
-                        "th18",
-                        "th21",
-                        "th52",
-                        "th53",
-                        "th56",
-                        "th57",
-                        "th58",
-                        "th59"]
-    EDGE_COLLECTIONS = ["intraTheso_relations",
-                        "th12_relations",
-                        "th13_relations",
-                        "th15_relations",
-                        "th16_relations",
-                        "th18_relations",
-                        "th21_relations",
-                        "th52_relations",
-                        "th53_relations",
-                        "th56_relations",
-                        "th57_relations",
-                        "th58_relations",
-                        "th59_relations"
-                        ]
-    GRAPH_NAME = "IntraTheso"
+    GRAPH_NAME = "InterTheso_graph"
 
-    G = fetch_from_arango( EDGE_COLLECTIONS, DATABASE)
-
-
+    G = fetch_from_arango(GRAPH_NAME, DATABASE)
 
     matrix = compute_matrix(G)
 
