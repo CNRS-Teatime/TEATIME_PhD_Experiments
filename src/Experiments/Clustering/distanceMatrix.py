@@ -1,6 +1,7 @@
 from typing import Optional
 from arango import ArangoClient, database
 import networkx as nx
+import logging
 
 def fetch_from_arango(graph_name : str, database_name : str) -> Optional[nx.DiGraph]:
     """
@@ -68,7 +69,7 @@ def compute_matrix(graph : nx.DiGraph) -> list[list[int]]:
 
             distance_matrix[i][j] = distance_matrix[j][i] = distance
 
-    print(f"Fails {(fail/(n*n)) * 100}%") # TODO : Maybe log this into a log file for safekeeping
+    logging.log(logging.WARNING, f"Fails {(fail/(n*n)) * 100}%")
     return distance_matrix
 
 def write_matrix_to_file(file_name : str, document_id_list : list[str], mat: list[list[int]]) -> None:

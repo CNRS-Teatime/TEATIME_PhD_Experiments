@@ -2,10 +2,13 @@
 Hierarchical clustering on concepts using a precomputed distance matrix
 """
 import numpy as np
+import logging
 from arango import ArangoClient, database
 from sklearn.cluster import AgglomerativeClustering
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from sklearn.metrics import silhouette_score
+
 
 def create_linkage_matrix(model) -> np.ndarray:
     # Create linkage matrix and then plot the dendrogram
@@ -62,7 +65,7 @@ def fetch_distance_matrix(file_path : str) -> tuple[list ,np.ndarray]:
         return ids, np.asarray(matrix)
 
 
-def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> tuple[list[str], list[np.ndarray]]:
+def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> dict[str, list[int]]:
     """
     Based on a distance matrix csv file and a target number of cluster, computes
     the clusters. If the target number of clusters is higher than the number of objects, returns each object as its own
@@ -73,25 +76,42 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> tuple[list[str
     :param nb_clusters: The target number of clusters
     :type nb_clusters: int
 
-    :returns: The list of ids, and a numpy 1D array of the same size containing the cluster number. Where ids[i] and cluster[i] are the id and cluster number of an object
+    :returns: A dictionary with object ids as keys and lists of cluster associated with the id as value
     """
     ids, matrix = fetch_distance_matrix(matrix_csv)
 
     clustering = AgglomerativeClustering(metric="precomputed", linkage="average", distance_threshold=0, n_clusters=None)
 
-    clustering = clustering.fit(matrix)
+    fitted_clustering = clustering.fit(matrix)
 
-    linkage_matrix = create_linkage_matrix(clustering)
+    linkage_matrix = create_linkage_matrix(fitted_clustering)
 
     granular_list: list[np.ndarray] = []
 
     nb_clusters.sort() # Just to make it easier to retrieve granularities
 
     for n in nb_clusters: #Iterate over all desired granularity (max cluster number)
-        granular_list.append(fcluster(linkage_matrix, n, criterion='maxclust'))
+
+        result = fcluster(linkage_matrix, n, criterion='maxclust')
+
+        #Silouhette score logging for further analysis
+        sc = silhouette_score(matrix, result, metric="precomputed")
+        logging.log(logging.INFO, f"Silouhette score for {n} cluster : {sc}")
+
+        granular_list.append(result)
+
 
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
-    return ids, granular_list
+    id_to_cluster_mapping: dict = {}
+
+    for i in range(len(granular_list)):
+        for j in range(len(ids)):
+            if not ids[j] in id_to_cluster_mapping:
+                id_to_cluster_mapping[ids[j]] = []
+            id_to_cluster_mapping[ids[j]].append(int(granular_list[i][j]))
+
+
+    return id_to_cluster_mapping
 
 
 def add_cluster_back_to_db(gran_clusters: dict,host_name: str, db_name: str, db_user: str,
@@ -110,7 +130,7 @@ def add_cluster_back_to_db(gran_clusters: dict,host_name: str, db_name: str, db_
     :type db_user: str
     :param db_password: password associated with the username
     :type db_password: str
-    TODO: FIX
+    TODO: FIX DOCSTRING
     """
     client = ArangoClient(hosts=host_name)
     db: database.StandardDatabase = client.db(db_name, username=db_user, password=db_password)
@@ -129,9 +149,9 @@ def add_cluster_back_to_db(gran_clusters: dict,host_name: str, db_name: str, db_
 
 if __name__ == "__main__":
 
-    NB_CLUSTERS = 16
+    NB_CLUSTERS = [8, 16, 32, 64, 128, 256, 512, 1024]
 
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
-    ids, clusters = compute_clusters("/Users/marwan/Code/TEATIME_PhD_Experiments/data/Clustering/clean_distance_matrix_th15_graph.csv", NB_CLUSTERS)
+    cluster_mapping = compute_clusters("/Users/marwan/Code/TEATIME_PhD_Experiments/data/Clustering/clean_distance_matrix_th15_graph.csv", NB_CLUSTERS)
 
     # add_cluster_back_to_db( "th15", clusters, ids, "TEATIME", "root", "test")

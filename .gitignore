@@ -11,3 +11,4 @@ config/
 !config/graph-config-schema.json
 !config/theso-config-schema.json
 !config/config-graph-xp.json
+*.log
