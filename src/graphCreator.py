@@ -3,8 +3,16 @@ import sys, os
 from thesaurusCreator import get_config
 from arango import ArangoClient, database, graph
 
-def create_graph(db : database.StandardDatabase, graph_list : list) -> None:
-    """Creates the desired graph from a JSON configuration file stored as a dict"""
+def create_graph(db : database.StandardDatabase, graph_list : list[dict]) -> None:
+    """
+    Creates the desired graph from a JSON configuration file stored as a dict.
+    WILL OVERWRITE DATA IF THE GRAPH NAME ALREADY EXISTS
+
+    :param db: The database in which to create the graph
+    :type db: arango.database.StandardDatabase
+    :param graph_list: a list of dictionaries containing graph definitions
+    :type graph_list: list[dict] each dict contains these keys : name, relations. They are defined in the readme as the graph configuration JSON
+    """
     for g in graph_list:
         if db.has_graph(g["name"]):
             db.delete_graph(g["name"])
@@ -21,6 +29,12 @@ def create_graph(db : database.StandardDatabase, graph_list : list) -> None:
         print(f"Created graph {g["name"]}")
 
 def create_graph_from_config(config_path : str):
+    """
+    This function fetches the configuration file, verifies it against the schema and correctly calls the sister function create_graph()
+
+    :param config_path: The path to the configuration file
+    :type config_path: str
+    """
     config: dict = get_config(config_path, "config/graph-config-schema.json")
     graphs: list = config["graphs"]
 
