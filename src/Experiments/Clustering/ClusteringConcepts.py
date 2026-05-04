@@ -6,7 +6,7 @@ import logging
 from arango import ArangoClient, database
 from sklearn.cluster import AgglomerativeClustering
 from matplotlib import pyplot as plt
-from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from scipy.cluster.hierarchy import dendrogram, fcluster
 from sklearn.metrics import silhouette_score
 
 
@@ -114,23 +114,20 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> dict[str, list
     return id_to_cluster_mapping
 
 
-def add_cluster_back_to_db(gran_clusters: dict,host_name: str, db_name: str, db_user: str,
-                           db_password: str) -> None:
+def add_cluster_back_to_db(gran_clusters: dict[str, list[int]], db_name: str, db_user: str,
+                           db_password: str, host_name: str = "http://localhost:8529") -> None:
     """
     Push back cluster numbers to arangoDB. The credentials are usually defined in a .env, fetched by the main function.
-    :param collection_name: The name of the arangoDB collection in which to push the changes
-    :type collection_name: str
-    :param clusters: a 1D numpy array containing cluster numbers Where ids[i] and cluster[i] are the id and cluster number of an object
-    :type clusters: np.ndarray
-    :param ids: A list of ids, associated with the clusters array
-    :type ids: list[str]
+    :param gran_clusters: A dictionnary associating documents ids to a list of clusters it belongs to, with increasing granularity.
+    :type gran_clusters: dict
     :param db_name: name of the associated database
     :type db_name: str
     :param db_user: usename to use for credentials
     :type db_user: str
     :param db_password: password associated with the username
     :type db_password: str
-    TODO: FIX DOCSTRING
+    :param host_name: The ArangoDB instance hostname (If local : http://localhost:8529 by default)
+    :type host_name: str
     """
     client = ArangoClient(hosts=host_name)
     db: database.StandardDatabase = client.db(db_name, username=db_user, password=db_password)
