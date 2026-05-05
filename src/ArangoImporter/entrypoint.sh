@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-CMD="python3 TEATIME_PhD_Experiments/src/ArangoImporter/main.py"
+CMD="python3 main.py"
 
 if [ -n "${THESO_CONFIG}" ]; then
   CMD="$CMD --thesaurus-config ${THESO_CONFIG}"

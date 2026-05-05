@@ -1,6 +1,9 @@
+import os
+
 from ClusteringConcepts import *
 from distanceMatrix import *
 import csv, logging
+from dotenv import load_dotenv
 
 
 def write_clusters_to_csv(gran_cluster_list: list[list[str]], path: str):
@@ -31,16 +34,14 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M",
         level=logging.INFO
     )
-
-
-    GRAPH_NAME = "th15_graph"
+    GRAPH_NAME = os.getenv("GRAPHNAME")
 
     MATRIX_PATH = f"distance_matrix_{GRAPH_NAME}.csv"
-    DATABASE = "TEATIME-Exp"
-    HOST = "http://localhost:8529"
-    USER = "root"
-    PASSWORD = "test"
-    NB_CLUSTERS = [16, 32, 64, 128]
+    DATABASE =os.getenv("DB_NAME")
+    HOST = os.getenv("DB_ADDRESS")
+    USER = os.getenv("DB_USER")
+    PASSWORD = os.getenv("DB_PASSWORD")
+    NB_CLUSTERS = [int(os.getenv("NB_CLUSTERS"))]
 
     logging.log(logging.INFO, f"Starting clustering on graph {GRAPH_NAME}, in database {DATABASE}, with {NB_CLUSTERS} cluster")
 
