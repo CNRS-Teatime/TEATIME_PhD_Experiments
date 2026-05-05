@@ -27,6 +27,7 @@ if __name__ == "__main__":
             name="arango-db",
             image=constants.arango_db_image,
             image_pull_policy=ImagePullPolicy.if_not_present,
+            env={"ARANGO_NO_AUTH": True}, #FIXME : Change for authentified use ?
             daemon=True
         )
 
