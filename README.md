@@ -8,6 +8,10 @@ The data wont be available in this repository and has to be provided by the user
 ## Description
 This project is composed of a few D3Js force graphs implementations and  arangoDB connectors writen in python for data related to Notre-Dame de Paris. (notably the thesaurus and annotation data)
 
+## Prerequisites
+
+This utility does not generate or manage you ArangoDB instance. You need to refer to ArangoDB's [documentation](https://docs.arango.ai/arangodb/stable/get-started/). We recommend using the dockerised version of ArangoDB.
+
 ## Installation
 
 Python 3.12 is required, because spaCy does not support python 3.13 and higher yet
@@ -62,7 +66,8 @@ Here is a list of all the available options
 | --add-weights-to-coll | An existing weight collection, where default weights will be added                | --add-weights-to-coll th15_relations      |
 
 
-example usage : 
+example usage :
+- Creating a 
 ```bash
 python3 main.py --graph-config [path-to-config]
 ```
@@ -72,7 +77,7 @@ python3 main.py --thesaurus-config [path-to-config] --cleanup True
 ```
 
 ```bash
-python3 main.py --dump-path path/to/dump --db-address http://localhost:8529 --db-name NAME --db-user USERNAME --db-password 1234
+python3 main.py --dump-path path/to/dump
 ```
 
 ## Feature specific information

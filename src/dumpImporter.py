@@ -15,13 +15,24 @@ def import_from_dump(db : database.StandardDatabase, dump_path : str):
     :param dump_path: The path to the folder containing the dump, as a string
     :type dump_path: str
     """
-    for file in Path(dump_path).glob('*.json'):
-        collection_name : str = file.name.split(".json")[0]
+    if not Path(dump_path).exists():
+        raise FileNotFoundError
+
+
+    json_list = Path(dump_path).glob('*.json')
+
+    try:
+        current_json = next(json_list)
+    except StopIteration:
+        raise FileNotFoundError
+
+    while current_json is not None:
+        collection_name : str = current_json.name.split(".json")[0]
 
         if db.has_collection(collection_name):
             db.delete_collection(collection_name)
 
-        with open(file) as f:
+        with open(current_json) as f:
             data: dict = json.load(f)
 
             if "_from" in data[0]: # we are handling an edge list
@@ -30,6 +41,12 @@ def import_from_dump(db : database.StandardDatabase, dump_path : str):
                 collection : database.StandardCollection = db.create_collection(collection_name)
 
             collection.insert_many(data, raise_on_document_error=True)
+
+        try:
+            current_json = next(json_list)
+        except StopIteration:
+            break
+
 
 def import_from_dump_main(host: str, db_name: str, user: str, password: str, dump_path: str):
     client: ArangoClient = ArangoClient(hosts=host)

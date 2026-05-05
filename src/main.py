@@ -1,4 +1,4 @@
-import argparse, os
+import argparse, os, sys
 
 from dotenv import load_dotenv
 
@@ -23,7 +23,11 @@ def parse_command_line():
 
     parser.add_argument('--add-weights-to-coll', '-a', type=str, help='A collection, to whom you want to add default weights')
 
-    return parser.parse_known_args()[0]
+    if len(sys.argv) < 2:
+        parser.print_help()
+        sys.exit(1)
+
+    return parser.parse_args()
 
 def main():
     args = parse_command_line()
