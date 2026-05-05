@@ -1,0 +1,101 @@
+{
+    "credentials": {
+        "host" : "http://localhost:8529",
+        "username" : "root",
+        "password" : "test",
+        "database" : "TEATIME"
+    },
+    "thesauri" : [
+        {
+            "name" : "th12",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th12",
+            "type": "raw"
+        },
+        {
+            "name" : "th13",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th13",
+            "type": "raw"
+        },
+        {
+            "name" : "th15",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th15",
+            "type": "raw"
+        },
+        {
+            "name" : "th16",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th16",
+            "type": "raw"
+        },
+        {
+            "name" : "th18",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th18",
+            "type": "raw"
+        },
+        {
+            "name" : "th21",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th21",
+            "type": "raw"
+        },
+        {
+            "name" : "th42",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th42",
+            "type": "raw"
+        },
+        {
+            "name" : "th52",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th52",
+            "type": "raw"
+        },
+        {
+            "name" : "th53",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th53",
+            "type": "raw"
+        },
+        {
+            "name" : "th56",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th56",
+            "type": "raw"
+        },
+        {
+            "name" : "th57",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th57",
+            "type": "raw"
+        },
+        {
+            "name" : "th58",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th58",
+            "type": "raw"
+        },
+        {
+            "name" : "th59",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th59",
+            "type": "raw"
+        },
+        {
+            "name" : "th62",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th62",
+            "type": "raw"
+        },
+        {
+            "name" : "th63",
+            "database" : "TEATIME",
+            "source" : "https://frollo.notre-dame.science/openapi/v1/thesaurus/th63",
+            "type": "raw"
+        }
+    ]
+}
+
