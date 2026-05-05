@@ -3,7 +3,8 @@ import unittest, docker, json
 from arango import ArangoClient, database
 from docker import DockerClient
 
-from src import dumpImporter, thesaurusCreator
+from ArangoImporter import dumpImporter, thesaurusCreator
+
 
 class MyTestCase(unittest.TestCase):
     @classmethod
