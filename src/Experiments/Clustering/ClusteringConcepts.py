@@ -65,7 +65,7 @@ def fetch_distance_matrix(file_path : str) -> tuple[list ,np.ndarray]:
         return ids, np.asarray(matrix)
 
 
-def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> dict[str, list[int]]:
+def compute_clusters(matrix_csv : str, nb_clusters: list[int], visualise_silouhette_score: bool = False) -> dict[str, list[int]]:
     """
     Based on a distance matrix csv file and a target number of cluster, computes
     the clusters. If the target number of clusters is higher than the number of objects, returns each object as its own
@@ -75,6 +75,8 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> dict[str, list
     :type matrix_csv: str
     :param nb_clusters: The target number of clusters
     :type nb_clusters: int
+    :param visualise_silouhette_score: Wheter or not to visualise the silouhette score
+    :type visualise_silouhette_score: bool
 
     :returns: A dictionary with object ids as keys and lists of cluster associated with the id as value
     """
@@ -90,6 +92,8 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> dict[str, list
 
     nb_clusters.sort() # Just to make it easier to retrieve granularities
 
+    score = []
+
     for n in nb_clusters: #Iterate over all desired granularity (max cluster number)
 
         result = fcluster(linkage_matrix, n, criterion='maxclust')
@@ -98,7 +102,19 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int]) -> dict[str, list
         sc = silhouette_score(matrix, result, metric="precomputed")
         logging.log(logging.INFO, f"Silouhette score for {n} cluster : {sc}")
 
+        score.append(sc)
+
         granular_list.append(result)
+
+    if visualise_silouhette_score :
+        fig, ax = plt.subplots()
+
+        ax.plot([str(x) for x in nb_clusters], score, label = "Silouhette score")
+        ax.set_ylabel("Silouhette score")
+        ax.set_xlabel("Number of clusters in the result")
+        ax.set_title("Silouhette score at various granularity")
+
+        plt.show()
 
 
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
