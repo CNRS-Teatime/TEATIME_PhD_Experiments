@@ -12,3 +12,4 @@ config/
 !config/theso-config-schema.json
 !config/config-graph-xp.json
 *.log
+.venv
