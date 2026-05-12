@@ -34,7 +34,8 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M",
         level=logging.INFO
     )
-    GRAPH_NAME = os.getenv("GRAPHNAME")
+    load_dotenv(".env")
+    GRAPH_NAME = os.getenv("CONCEPTS_GRAPH")
 
     MATRIX_PATH = f"distance_matrix_{GRAPH_NAME}.csv"
     DATABASE =os.getenv("DB_NAME")
@@ -60,5 +61,7 @@ if __name__ == "__main__":
 
         # fetched_cluster = populate_clusters(NB_CLUSTERS, clusters, ids, "TEATIME", "root", "test")
 
-    add_cluster_back_to_db(id_to_cluster_mapping, HOST, DATABASE, USER, PASSWORD)
+    if os.getenv("RESULT_FORMAT") == "DB":
+        add_cluster_back_to_db(id_to_cluster_mapping, HOST, DATABASE, USER, PASSWORD)
+
     # write_clusters_to_csv(cluster_with_ids, f"/Users/marwan/Code/TEATIME_PhD_Experiments/data/Clustering/{GRAPH_NAME}_clusters.csv")
