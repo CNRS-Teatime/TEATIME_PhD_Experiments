@@ -1,7 +1,8 @@
 import os
 
 from ClusteringConcepts import *
-from distanceMatrix import *
+from DistanceMatrix import *
+from TermAssociation import *
 import csv, logging
 from dotenv import load_dotenv
 
@@ -38,7 +39,7 @@ if __name__ == "__main__":
     GRAPH_NAME = os.getenv("CONCEPTS_GRAPH")
 
     MATRIX_PATH = f"distance_matrix_{GRAPH_NAME}.csv"
-    DATABASE =os.getenv("DB_NAME")
+    DATABASE = os.getenv("DB_NAME")
     HOST = os.getenv("DB_ADDRESS")
     USER = os.getenv("DB_USER")
     PASSWORD = os.getenv("DB_PASSWORD")
@@ -46,13 +47,13 @@ if __name__ == "__main__":
 
     logging.log(logging.INFO, f"Starting clustering on graph {GRAPH_NAME}, in database {DATABASE}, with {NB_CLUSTERS} cluster")
 
-    G = fetch_from_arango(GRAPH_NAME, DATABASE)
+    """G = fetch_from_arango(GRAPH_NAME, DATABASE)
 
     if G is None:
         logging.log(logging.ERROR,f"Graph '{GRAPH_NAME}' is not in the database {DATABASE}")
         exit()
 
-    matrix = compute_matrix(G)
+    matrix = compute_concept_matrix(G)
 
     write_matrix_to_file(MATRIX_PATH, list(G.nodes._nodes.keys()), matrix)
 
@@ -64,4 +65,13 @@ if __name__ == "__main__":
     if os.getenv("RESULT_FORMAT") == "DB":
         add_cluster_back_to_db(id_to_cluster_mapping, HOST, DATABASE, USER, PASSWORD)
 
-    # write_clusters_to_csv(cluster_with_ids, f"/Users/marwan/Code/TEATIME_PhD_Experiments/data/Clustering/{GRAPH_NAME}_clusters.csv")
+    # write_clusters_to_csv(cluster_with_ids, f"/Users/marwan/Code/TEATIME_PhD_Experiments/data/Clustering/{GRAPH_NAME}_clusters.csv")"""
+
+    client: ArangoClient = ArangoClient(hosts=os.getenv("DB_ADDRESS"))
+    db: database.StandardDatabase = client.db(os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"))
+
+    ids, matrix = fetch_distance_matrix("distance_matrix_InterTheso_graph.csv")
+    object_maping = create_object_concept_map(db, os.getenv("NODE_COLLECTION"), os.getenv("ASSOCIATION_GRAPH"))
+
+    object_matrix = computer_object_matrix(matrix, ids, object_maping)
+    print(object_matrix)

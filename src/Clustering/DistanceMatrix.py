@@ -2,8 +2,9 @@ from typing import Optional
 from arango import ArangoClient, database
 import networkx as nx
 import logging
+import numpy as np
 
-def fetch_from_arango(graph_name : str, database_name : str) -> Optional[nx.DiGraph]:
+def fetch_from_arango(graph_name : str, database_name : str, weights : dict = None) -> Optional[nx.DiGraph]:
     """
     From a list of edge collection, fetches the objects in those collection in the associated database.
     Those edges are inserted inside a networkx directed graph, which is returned by the function
@@ -21,6 +22,15 @@ def fetch_from_arango(graph_name : str, database_name : str) -> Optional[nx.DiGr
     if not db.has_graph(graph_name):
         return None
 
+    if weights is None:
+        weights = {
+            'narrower': 1,
+            'broader': 1,
+            'related': 3,
+            'closeMatch': 1.5,
+            'exactMatch': 0
+        }
+
     edge_collections : list = db.graph(graph_name).edge_collections()
 
     edges_as_list : list = []
@@ -28,7 +38,12 @@ def fetch_from_arango(graph_name : str, database_name : str) -> Optional[nx.DiGr
     for coll in edge_collections:
         edge_coll: database.StandardCollection = db.collection(coll)
         edge_cursor = edge_coll.all()
-        edges_as_list.extend([(edge['_from'], edge['_to'], int(edge['weight'])) for edge in edge_cursor])
+        for edge in edge_cursor:
+            if edge['type'] in weights:
+                edges_as_list.append((edge['_from'], edge['_to'], int(weights[edge['type']])))
+            else:
+                edges_as_list.append((edge['_from'], edge['_to'], 1))
+
 
     Gr: nx.DiGraph = nx.DiGraph()
     Gr.add_weighted_edges_from(edges_as_list)
@@ -36,7 +51,7 @@ def fetch_from_arango(graph_name : str, database_name : str) -> Optional[nx.DiGr
     return Gr
 
 
-def compute_matrix(graph : nx.DiGraph) -> list[list[int]]:
+def compute_concepts_matrix(graph : nx.DiGraph) -> list[list[int]]:
     """
     Computes a pairwise distance matrix for all the nodes in the given networkx Directed graph.
 
@@ -71,6 +86,35 @@ def compute_matrix(graph : nx.DiGraph) -> list[list[int]]:
 
     logging.log(logging.WARNING, f"Fails {(fail/(n*n)) * 100}%")
     return distance_matrix
+
+def distance_between_sets_of_concepts(set1 : list[str], set2 : list[str], concept_matrix: np.ndarray, concept_ids: list[str]):
+    dist = 0
+    for c1 in set1:
+        for c2 in set2:
+            dist += concept_matrix[concept_ids.index(c1)][concept_ids.index(c2)]
+
+    return dist / (len(set1) * len(set2))
+
+def computer_object_matrix(concept_matrix: np.ndarray, concept_ids: list[str], object_mapping: dict[str, list[str]]):
+    """
+    From a concept distance matrix and a map of object to concept set, build a distance matrix between all the objects
+    """
+    n = len(object_mapping)
+    distance_matrix : list[list] = [[0 for i in range(n)] for j in range(n)]
+    objects_ids : list = list(object_mapping.keys())
+
+
+    for i in range(n):
+        for j in range(i+1, n):
+            if len(object_mapping[objects_ids[i]]) == 0 or object_mapping[objects_ids[j]] == 0:
+                distance = 100000000
+            else:
+                distance = distance_between_sets_of_concepts(object_mapping[objects_ids[i]], object_mapping[objects_ids[j]], concept_matrix, concept_ids)
+
+            distance_matrix[i][j] = distance_matrix[j][i] = distance
+
+    return distance_matrix
+
 
 def write_matrix_to_file(file_name : str, document_id_list : list[str], mat: list[list[int]]) -> None:
     """
@@ -111,7 +155,7 @@ if __name__ == "__main__":
 
     G = fetch_from_arango(GRAPH_NAME, DATABASE)
 
-    matrix = compute_matrix(G)
+    matrix = compute_concepts_matrix(G)
 
     print(f"{len(matrix)} x {len(matrix[0])} matrix produced")
 

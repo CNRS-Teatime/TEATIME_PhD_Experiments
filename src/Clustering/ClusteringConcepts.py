@@ -99,10 +99,10 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int], visualise_silouhe
         result = fcluster(linkage_matrix, n, criterion='maxclust')
 
         #Silouhette score logging for further analysis
-        sc = silhouette_score(matrix, result, metric="precomputed")
-        logging.log(logging.INFO, f"Silouhette score for {n} cluster : {sc}")
+        #sc = silhouette_score(matrix, result, metric="precomputed")
+        #logging.log(logging.INFO, f"Silouhette score for {n} cluster : {sc}")
 
-        score.append(sc)
+        #score.append(sc)
 
         granular_list.append(result)
 
