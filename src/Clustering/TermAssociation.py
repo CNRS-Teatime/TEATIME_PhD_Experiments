@@ -2,7 +2,7 @@ import threading
 from arango import database
 
 
-def create_object_concept_map(db : database.StandardDatabase, collection_name : str, graph_name : str) -> dict[str, list[str]]:
+def create_object_concept_map(db : database.StandardDatabase, collection_name : str, graph_name : str, valid_ids : list[str] = None) -> dict[str, list[str]]:
     """
     For a given collection name and semantic graph search the graph for object - concept associations
     :param db: An arango database API wrapper
@@ -11,6 +11,7 @@ def create_object_concept_map(db : database.StandardDatabase, collection_name : 
     :type collection_name: str
     :param graph_name: The name of the graph containing information about associations
     :type graph_name: str
+    :param valid_ids: The list of accepted concept IDs, if None then concepts are always considered valid
     :returns: A dict with document ids from `collection_name` as keys and the list of associated concept ids as value
     """
 
@@ -32,6 +33,9 @@ def create_object_concept_map(db : database.StandardDatabase, collection_name : 
         mapping[doc_id] = []
 
         for identifier in result:
+            if valid_ids is not None:
+                if identifier not in valid_ids:
+                    continue
             mapping[doc_id].append(identifier)
 
     threads = []

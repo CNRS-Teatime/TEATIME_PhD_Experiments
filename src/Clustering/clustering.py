@@ -3,7 +3,7 @@ import os
 from ClusteringConcepts import *
 from DistanceMatrix import *
 from TermAssociation import *
-import csv, logging
+import csv, logging, time
 from dotenv import load_dotenv
 
 
@@ -70,8 +70,16 @@ if __name__ == "__main__":
     client: ArangoClient = ArangoClient(hosts=os.getenv("DB_ADDRESS"))
     db: database.StandardDatabase = client.db(os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"))
 
+    print("Starting concept matrix fetching...")
+    start = time.time()
     ids, matrix = fetch_distance_matrix("distance_matrix_InterTheso_graph.csv")
-    object_maping = create_object_concept_map(db, os.getenv("NODE_COLLECTION"), os.getenv("ASSOCIATION_GRAPH"))
-
-    object_matrix = computer_object_matrix(matrix, ids, object_maping)
+    print(f"Concept matrix fetched, took {time.time() - start}seconds")
+    print("Starting object concept mapping...")
+    start = time.time()
+    object_maping = create_object_concept_map(db, os.getenv("NODE_COLLECTION"), os.getenv("ASSOCIATION_GRAPH"), ids)
+    print(f"Finished, took {time.time() - start}seconds")
+    print("Starting object distance matrix...")
+    start = time.time()
+    object_matrix = compute_object_matrix(matrix, ids, object_maping)
+    print(f"Finished, took {time.time() - start}seconds")
     print(object_matrix)

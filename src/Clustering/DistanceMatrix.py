@@ -95,7 +95,7 @@ def distance_between_sets_of_concepts(set1 : list[str], set2 : list[str], concep
 
     return dist / (len(set1) * len(set2))
 
-def computer_object_matrix(concept_matrix: np.ndarray, concept_ids: list[str], object_mapping: dict[str, list[str]]):
+def compute_object_matrix(concept_matrix: np.ndarray, concept_ids: list[str], object_mapping: dict[str, list[str]]):
     """
     From a concept distance matrix and a map of object to concept set, build a distance matrix between all the objects
     """
@@ -106,8 +106,8 @@ def computer_object_matrix(concept_matrix: np.ndarray, concept_ids: list[str], o
 
     for i in range(n):
         for j in range(i+1, n):
-            if len(object_mapping[objects_ids[i]]) == 0 or object_mapping[objects_ids[j]] == 0:
-                distance = 100000000
+            if len(object_mapping[objects_ids[i]]) == 0 or len(object_mapping[objects_ids[j]]) == 0:
+                distance = None
             else:
                 distance = distance_between_sets_of_concepts(object_mapping[objects_ids[i]], object_mapping[objects_ids[j]], concept_matrix, concept_ids)
 
