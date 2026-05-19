@@ -87,36 +87,50 @@ def compute_concepts_matrix(graph : nx.DiGraph) -> list[list[int]]:
     logging.log(logging.WARNING, f"Fails {(fail/(n*n)) * 100}%")
     return distance_matrix
 
-def distance_between_sets_of_concepts(set1 : list[str], set2 : list[str], concept_matrix: np.ndarray, concept_ids: list[str]):
+def distance_between_sets_of_concepts(set1 : list[str], set2 : list[str], concept_matrix: np.ndarray, concept_ids_map: dict[str, int]):
     dist = 0
     for c1 in set1:
         for c2 in set2:
-            dist += concept_matrix[concept_ids.index(c1)][concept_ids.index(c2)]
+            dist += concept_matrix[concept_ids_map[c1]][concept_ids_map[c2]]
 
     return dist / (len(set1) * len(set2))
 
-def compute_object_matrix(concept_matrix: np.ndarray, concept_ids: list[str], object_mapping: dict[str, list[str]]):
+def map_concept_id_to_index(c_ids: list) -> dict[str, int]:
+    concept_id_map : dict[str, int] = {}
+
+    for i in range(len(c_ids)):
+        concept_id_map[c_ids[i]] = i
+
+    return concept_id_map
+
+def compute_object_matrix(concept_matrix: np.ndarray, concept_ids: list[str], object_mapping: dict[str, list[str]]) -> np.ndarray:
     """
-    From a concept distance matrix and a map of object to concept set, build a distance matrix between all the objects
+    From a concept distance matrix and a map of object to concept set, build a distance matrix between all the objects.
+    :param concept_matrix: A 2D Matrix representing the distance between concepts
+    :param concept_ids: The list of concept ids present in the matrix, in the same ordrer as the matrix
+    :param object_mapping: A mapping from object ids to sets of concept ids
+
+    :returns: A 2D distance matrix between all sets of concepts
     """
-    n = len(object_mapping)
-    distance_matrix : list[list] = [[0 for i in range(n)] for j in range(n)]
+    n = int(len(object_mapping) / 10)
+    distance_matrix = np.array([[0 for i in range(n)] for j in range(n)])
     objects_ids : list = list(object_mapping.keys())
+    concept_ids_map : dict[str, int] = map_concept_id_to_index(concept_ids)
 
 
     for i in range(n):
         for j in range(i+1, n):
             if len(object_mapping[objects_ids[i]]) == 0 or len(object_mapping[objects_ids[j]]) == 0:
-                distance = None
+                distance = -1
             else:
-                distance = distance_between_sets_of_concepts(object_mapping[objects_ids[i]], object_mapping[objects_ids[j]], concept_matrix, concept_ids)
+                distance = distance_between_sets_of_concepts(object_mapping[objects_ids[i]], object_mapping[objects_ids[j]], concept_matrix, concept_ids_map)
 
             distance_matrix[i][j] = distance_matrix[j][i] = distance
 
     return distance_matrix
 
 
-def write_matrix_to_file(file_name : str, document_id_list : list[str], mat: list[list[int]]) -> None:
+def write_matrix_to_file(file_name : str, document_id_list : list[str], mat: np.ndarray) -> None:
     """
     Write the distance matrix as a csv into a given file.
     The first row is the list of document ids.

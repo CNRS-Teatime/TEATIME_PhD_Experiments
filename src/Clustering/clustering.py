@@ -82,4 +82,4 @@ if __name__ == "__main__":
     start = time.time()
     object_matrix = compute_object_matrix(matrix, ids, object_maping)
     print(f"Finished, took {time.time() - start}seconds")
-    print(object_matrix)
+    write_matrix_to_file("aioli_distance_matrix.csv", list(object_maping.keys()), object_matrix)
