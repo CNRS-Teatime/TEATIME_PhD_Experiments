@@ -58,14 +58,19 @@ def fetch_distance_matrix(file_path : str) -> tuple[list ,np.ndarray]:
         matrix : list = []
 
         for i in range(size):
-            line = [int(d) for d in f.readline().split(',')]
+            line = []
+            for d in f.readline().split(','):
+                if int(d) == -1:
+                    line.append(10000000000000000000)
+                else:
+                    line.append(int(d))
             matrix.append(line[:size])
 
 
         return ids, np.asarray(matrix)
 
 
-def compute_clusters(matrix_csv : str, nb_clusters: list[int], visualise_silouhette_score: bool = False) -> dict[str, list[int]]:
+def compute_clusters(ids, matrix, nb_clusters: list[int], visualise_silouhette_score: bool = False) -> dict[str, list[int]]:
     """
     Based on a distance matrix csv file and a target number of cluster, computes
     the clusters. If the target number of clusters is higher than the number of objects, returns each object as its own
@@ -80,8 +85,6 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int], visualise_silouhe
 
     :returns: A dictionary with object ids as keys and lists of cluster associated with the id as value
     """
-    ids, matrix = fetch_distance_matrix(matrix_csv)
-
     clustering = AgglomerativeClustering(metric="precomputed", linkage="average", distance_threshold=0, n_clusters=None)
 
     fitted_clustering = clustering.fit(matrix)
@@ -99,10 +102,10 @@ def compute_clusters(matrix_csv : str, nb_clusters: list[int], visualise_silouhe
         result = fcluster(linkage_matrix, n, criterion='maxclust')
 
         #Silouhette score logging for further analysis
-        #sc = silhouette_score(matrix, result, metric="precomputed")
-        #logging.log(logging.INFO, f"Silouhette score for {n} cluster : {sc}")
+        sc = silhouette_score(matrix, result, metric="precomputed")
+        logging.log(logging.INFO, f"Silouhette score for {n} cluster : {sc}")
 
-        #score.append(sc)
+        score.append(sc)
 
         granular_list.append(result)
 

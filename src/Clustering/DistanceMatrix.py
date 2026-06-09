@@ -51,7 +51,7 @@ def fetch_from_arango(graph_name : str, database_name : str, weights : dict = No
     return Gr
 
 
-def compute_concepts_matrix(graph : nx.DiGraph) -> list[list[int]]:
+def compute_concepts_matrix(graph : nx.DiGraph) -> np.ndarray:
     """
     Computes a pairwise distance matrix for all the nodes in the given networkx Directed graph.
 
@@ -66,7 +66,7 @@ def compute_concepts_matrix(graph : nx.DiGraph) -> list[list[int]]:
     fail = 0
 
     # Initializing an n by n zero matrix where n is the number of nodes in the graph
-    distance_matrix : list[list[int]] = [[0 for i in range(n)] for j in range(n)]
+    distance_matrix  = np.array([[0 for i in range(n)] for j in range(n)])
 
     for i in range(n):
         for j in range(i + 1, n):
@@ -112,9 +112,11 @@ def compute_object_matrix(concept_matrix: np.ndarray, concept_ids: list[str], ob
 
     :returns: A 2D distance matrix between all sets of concepts
     """
-    n = int(len(object_mapping) / 10)
+    #Filtering out objects that have empty concept sets
+
+    n = int(len(object_mapping))
     distance_matrix = np.array([[0 for i in range(n)] for j in range(n)])
-    objects_ids : list = list(object_mapping.keys())
+    objects_ids = np.array(list(object_mapping.keys()))
     concept_ids_map : dict[str, int] = map_concept_id_to_index(concept_ids)
 
 

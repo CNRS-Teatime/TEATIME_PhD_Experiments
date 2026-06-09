@@ -13,3 +13,4 @@ config/
 !config/config-graph-xp.json
 *.log
 .venv
+.env

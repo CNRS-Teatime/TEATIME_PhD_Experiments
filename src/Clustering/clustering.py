@@ -27,7 +27,7 @@ def write_clusters_to_csv(gran_cluster_list: list[list[str]], path: str):
 
 if __name__ == "__main__":
     logging.basicConfig(
-        filename="clustering.log",
+        filename=".cache/clustering.log",
         encoding="utf-8",
         filemode="a",
         format="{asctime} - {levelname} - {message}",
@@ -35,51 +35,75 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M",
         level=logging.INFO
     )
-    load_dotenv(".env")
-    GRAPH_NAME = os.getenv("CONCEPTS_GRAPH")
 
-    MATRIX_PATH = f"distance_matrix_{GRAPH_NAME}.csv"
+    load_dotenv(".env")
+
+    #Fetching and defining all constants
+    CONCEPT_GRAPH_NAME = os.getenv("CONCEPTS_GRAPH")
+    OBJECT_COLLECTION = os.getenv("NODE_COLLECTION")
+    ASSOCIATION_GRAPH_NAME = os.getenv("ASSOCIATION_GRAPH")
+    CONCEPT_MATRIX_PATH = f".cache/distance_matrix_{CONCEPT_GRAPH_NAME}.csv"
+    OBJECT_MATRIX_PATH = f".cache/{OBJECT_COLLECTION}_distance_matrix_over_{CONCEPT_GRAPH_NAME}.csv"
     DATABASE = os.getenv("DB_NAME")
     HOST = os.getenv("DB_ADDRESS")
     USER = os.getenv("DB_USER")
     PASSWORD = os.getenv("DB_PASSWORD")
-    NB_CLUSTERS = [int(os.getenv("NB_CLUSTERS"))]
+    NB_CLUSTERS = [int(n) for n in os.getenv("NB_CLUSTERS").split(',')]
 
-    logging.log(logging.INFO, f"Starting clustering on graph {GRAPH_NAME}, in database {DATABASE}, with {NB_CLUSTERS} cluster")
+    if not os.path.isdir(".cache"):
+        os.makedirs(".cache")
 
-    """G = fetch_from_arango(GRAPH_NAME, DATABASE)
+    logging.log(logging.INFO, f"Starting clustering on objects from {OBJECT_COLLECTION} associated to {CONCEPT_GRAPH_NAME} via {ASSOCIATION_GRAPH_NAME}, in database {DATABASE}, with {NB_CLUSTERS} cluster")
 
-    if G is None:
-        logging.log(logging.ERROR,f"Graph '{GRAPH_NAME}' is not in the database {DATABASE}")
-        exit()
+    if os.path.isfile(CONCEPT_MATRIX_PATH):
+        logging.log(logging.INFO, "Starting concept matrix fetching...")
+        start = time.time()
 
-    matrix = compute_concept_matrix(G)
+        concept_ids, concept_matrix = fetch_distance_matrix(CONCEPT_MATRIX_PATH)
 
-    write_matrix_to_file(MATRIX_PATH, list(G.nodes._nodes.keys()), matrix)
+        logging.log(logging.INFO, f"Concept matrix fetched, took {time.time() - start}seconds")
+    else :
+        logging.log(logging.INFO, "Starting concept matrix calculations...")
+        start = time.time()
+
+        G = fetch_from_arango(CONCEPT_GRAPH_NAME, DATABASE)
+
+        if G is None:
+            logging.log(logging.ERROR,f"Graph '{CONCEPT_GRAPH_NAME}' is not in the database {DATABASE}")
+            exit()
+
+        concept_matrix = compute_concepts_matrix(G)
+        concept_ids = list(G.nodes._nodes.keys())
+
+        # FIXME : Conpute matrix if it does not exist yet only, otherwise fetch it
+        write_matrix_to_file(CONCEPT_MATRIX_PATH, concept_ids, concept_matrix)
+        concept_ids, concept_matrix = fetch_distance_matrix(CONCEPT_MATRIX_PATH)
+
+        logging.log(logging.INFO, f"Concept matrix cumputed, took {time.time() - start}seconds")
+
+
+    logging.log(logging.INFO, "Starting object concept mapping...")
+    start = time.time()
+
+    client = ArangoClient(hosts=HOST)
+    db: database.StandardDatabase = client.db(DATABASE, username=USER, password=PASSWORD)
+
+    object_maping = create_object_concept_map(db, OBJECT_COLLECTION, ASSOCIATION_GRAPH_NAME, concept_ids)
+
+    logging.log(logging.INFO, f"Finished, took {time.time() - start}seconds")
+    logging.log(logging.INFO, "Starting object distance matrix...")
+    start = time.time()
+
+    object_matrix = compute_object_matrix(concept_matrix, concept_ids, object_maping)
+    object_ids = list(object_maping.keys())
+
+    logging.log(logging.INFO, f"Finished, took {time.time() - start}seconds")
+
+    write_matrix_to_file(OBJECT_MATRIX_PATH, object_ids, object_matrix)
 
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
-    id_to_cluster_mapping= compute_clusters(MATRIX_PATH, NB_CLUSTERS)
+    id_to_cluster_mapping = compute_clusters(object_ids, object_matrix, NB_CLUSTERS, True)
 
-        # fetched_cluster = populate_clusters(NB_CLUSTERS, clusters, ids, "TEATIME", "root", "test")
-
+    #FIXME : Show granularity and thesaurus used in the cluter storage
     if os.getenv("RESULT_FORMAT") == "DB":
-        add_cluster_back_to_db(id_to_cluster_mapping, HOST, DATABASE, USER, PASSWORD)
-
-    # write_clusters_to_csv(cluster_with_ids, f"/Users/marwan/Code/TEATIME_PhD_Experiments/data/Clustering/{GRAPH_NAME}_clusters.csv")"""
-
-    client: ArangoClient = ArangoClient(hosts=os.getenv("DB_ADDRESS"))
-    db: database.StandardDatabase = client.db(os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"))
-
-    print("Starting concept matrix fetching...")
-    start = time.time()
-    ids, matrix = fetch_distance_matrix("distance_matrix_InterTheso_graph.csv")
-    print(f"Concept matrix fetched, took {time.time() - start}seconds")
-    print("Starting object concept mapping...")
-    start = time.time()
-    object_maping = create_object_concept_map(db, os.getenv("NODE_COLLECTION"), os.getenv("ASSOCIATION_GRAPH"), ids)
-    print(f"Finished, took {time.time() - start}seconds")
-    print("Starting object distance matrix...")
-    start = time.time()
-    object_matrix = compute_object_matrix(matrix, ids, object_maping)
-    print(f"Finished, took {time.time() - start}seconds")
-    write_matrix_to_file("aioli_distance_matrix.csv", list(object_maping.keys()), object_matrix)
+        add_cluster_back_to_db(id_to_cluster_mapping, DATABASE, USER, PASSWORD, HOST)

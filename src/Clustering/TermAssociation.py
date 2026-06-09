@@ -50,4 +50,14 @@ def create_object_concept_map(db : database.StandardDatabase, collection_name : 
     for t in threads:
         t.join()
 
+    # Removing all empty sets
+    key_to_remove = []
+
+    for key in mapping:
+        if len(mapping[key]) == 0:
+            key_to_remove.append(key)
+
+    for k in key_to_remove:
+        mapping.pop(k)
+
     return mapping
