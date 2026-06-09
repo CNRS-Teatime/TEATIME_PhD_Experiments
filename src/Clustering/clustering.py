@@ -75,7 +75,6 @@ if __name__ == "__main__":
         concept_matrix = compute_concepts_matrix(G)
         concept_ids = list(G.nodes._nodes.keys())
 
-        # FIXME : Conpute matrix if it does not exist yet only, otherwise fetch it
         write_matrix_to_file(CONCEPT_MATRIX_PATH, concept_ids, concept_matrix)
         concept_ids, concept_matrix = fetch_distance_matrix(CONCEPT_MATRIX_PATH)
 
@@ -104,6 +103,5 @@ if __name__ == "__main__":
     # These create a list, where clusters_X[i] returns the cluster number of item i in the original ids list
     id_to_cluster_mapping = compute_clusters(object_ids, object_matrix, NB_CLUSTERS, True)
 
-    #FIXME : Show granularity and thesaurus used in the cluter storage
     if os.getenv("RESULT_FORMAT") == "DB":
         add_cluster_back_to_db(id_to_cluster_mapping, DATABASE, USER, PASSWORD, HOST)

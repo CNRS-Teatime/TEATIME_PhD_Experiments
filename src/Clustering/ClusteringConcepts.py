@@ -2,7 +2,7 @@
 Hierarchical clustering on concepts using a precomputed distance matrix
 """
 import numpy as np
-import logging
+import logging, os
 from arango import ArangoClient, database
 from sklearn.cluster import AgglomerativeClustering
 from matplotlib import pyplot as plt
@@ -161,7 +161,7 @@ def add_cluster_back_to_db(gran_clusters: dict[str, list[int]], db_name: str, db
             document_collections[collection_name] = db.collection(collection_name)
 
         if document_collections[collection_name].has(id):
-            document_collections[collection_name].update({'_id': id, 'gran_clusters': gran_clusters[id]}, silent=True)
+            document_collections[collection_name].update({'_id': id, f"clusters_with_{os.getenv("CONCEPTS_GRAPH")}_{os.getenv("NODE_COLLECTION")}": gran_clusters[id]}, silent=True)
 
 if __name__ == "__main__":
 
