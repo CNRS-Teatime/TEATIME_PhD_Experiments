@@ -1,12 +1,16 @@
 # TEATIME thesis experiments
 
-Welcome, this repository contains experiments, built inside the TEATIME project.
-The data wont be available in this repository and has to be provided by the user.
+REPOSITORY ARCHIVED FOR STRUCTURAL REASONS !
+
+This repository has been separated into three different ones :
+- [TT_Arango_importer](https://github.com/CNRS-Teatime/TT_ArangoImporter)
+- [TT_Semantic_Clustering](https://github.com/CNRS-Teatime/TT_Semantic_Clustering)
+- [TT_Workflows](https://github.com/CNRS-Teatime/TT_Workflows)
 
 ***
 
 ## Description
-This project is composed of a few D3Js force graphs implementations and  arangoDB connectors writen in python for data related to Notre-Dame de Paris. (notably the thesaurus and annotation data)
+This project is split into two part, the data integration is managed by `ArangoImporter` which can be found in `src/ArangoImporter` alongside its documentation. A clustering utility, which works on an arangoDB instance prepared by `ArangoImporter` can be found in `src/Clustering`.
 
 ## Prerequisites
 
